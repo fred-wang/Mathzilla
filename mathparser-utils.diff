@@ -1,0 +1,892 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Parent 4b412d52dba97ff005cd072f8782959e0832c255
+# Add basic functionalities to help writing parsers
+
+diff --git a/extensions/mathparser/src/nsMathMLNames.h b/extensions/mathparser/src/nsMathMLNames.h
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/src/nsMathMLNames.h
+@@ -0,0 +1,121 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2010
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++#ifndef nsMathMLNames_h__
++#define nsMathMLNames_h__
++
++NS_NAMED_LITERAL_STRING(kAttributeActiontype, "actiontype");
++NS_NAMED_LITERAL_STRING(kAttributeAlign, "align");
++NS_NAMED_LITERAL_STRING(kAttributeBackground, "background");
++NS_NAMED_LITERAL_STRING(kAttributeClose, "close");
++NS_NAMED_LITERAL_STRING(kAttributeColumnSpacing, "columnSpacing");
++NS_NAMED_LITERAL_STRING(kAttributeColumnalign, "columnalign");
++NS_NAMED_LITERAL_STRING(kAttributeColumnlines, "columnlines");
++NS_NAMED_LITERAL_STRING(kAttributeColumnspan, "columnspan");
++NS_NAMED_LITERAL_STRING(kAttributeDepth, "depth");
++NS_NAMED_LITERAL_STRING(kAttributeDisplay, "display");
++NS_NAMED_LITERAL_STRING(kAttributeDisplayStyle, "displaystyle");
++NS_NAMED_LITERAL_STRING(kAttributeDisplaystyle, "displaystyle");
++NS_NAMED_LITERAL_STRING(kAttributeEqualcolumns, "equalcolumns");
++NS_NAMED_LITERAL_STRING(kAttributeEqualrows, "equalrows");
++NS_NAMED_LITERAL_STRING(kAttributeFrame, "frame");
++NS_NAMED_LITERAL_STRING(kAttributeHeight, "height");
++NS_NAMED_LITERAL_STRING(kAttributeHref, "href");
++NS_NAMED_LITERAL_STRING(kAttributeLinethickness, "linethickness");
++NS_NAMED_LITERAL_STRING(kAttributeLspace, "lspace");
++NS_NAMED_LITERAL_STRING(kAttributeMathcolor, "mathcolor");
++NS_NAMED_LITERAL_STRING(kAttributeMathvariant, "mathvariant");
++NS_NAMED_LITERAL_STRING(kAttributeMaxsize, "maxsize");
++NS_NAMED_LITERAL_STRING(kAttributeMinsize, "minsize");
++NS_NAMED_LITERAL_STRING(kAttributeNotation, "notation");
++NS_NAMED_LITERAL_STRING(kAttributeOpen, "open");
++NS_NAMED_LITERAL_STRING(kAttributeRowalign, "rowalign");
++NS_NAMED_LITERAL_STRING(kAttributeRowlines, "rowlines");
++NS_NAMED_LITERAL_STRING(kAttributeRowspacing, "rowspacing");
++NS_NAMED_LITERAL_STRING(kAttributeRowspan, "rowspan");
++NS_NAMED_LITERAL_STRING(kAttributeRspace, "rspace");
++NS_NAMED_LITERAL_STRING(kAttributeScriptlevel, "scriptlevel");
++NS_NAMED_LITERAL_STRING(kAttributeSelection, "selection");
++NS_NAMED_LITERAL_STRING(kAttributeStretchy, "stretchy");
++NS_NAMED_LITERAL_STRING(kAttributeWidth, "width");
++NS_NAMED_LITERAL_STRING(kElementMaction, "maction");
++NS_NAMED_LITERAL_STRING(kElementMath, "math");
++NS_NAMED_LITERAL_STRING(kElementMenclose, "menclose");
++NS_NAMED_LITERAL_STRING(kElementMfrac, "mfrac");
++NS_NAMED_LITERAL_STRING(kElementMi, "mi");
++NS_NAMED_LITERAL_STRING(kElementMmultiscripts, "mmultiscripts");
++NS_NAMED_LITERAL_STRING(kElementMn, "mn");
++NS_NAMED_LITERAL_STRING(kElementMo, "mo");
++NS_NAMED_LITERAL_STRING(kElementMover, "mover");
++NS_NAMED_LITERAL_STRING(kElementMpadded, "mpadded");
++NS_NAMED_LITERAL_STRING(kElementMphantom, "mphantom");
++NS_NAMED_LITERAL_STRING(kElementMprescripts, "mprescripts");
++NS_NAMED_LITERAL_STRING(kElementMroot, "mroot");
++NS_NAMED_LITERAL_STRING(kElementMrow, "mrow");
++NS_NAMED_LITERAL_STRING(kElementMs, "ms");
++NS_NAMED_LITERAL_STRING(kElementMspace, "mspace");
++NS_NAMED_LITERAL_STRING(kElementMsqrt, "msqrt");
++NS_NAMED_LITERAL_STRING(kElementMstyle, "mstyle");
++NS_NAMED_LITERAL_STRING(kElementMsub, "msub");
++NS_NAMED_LITERAL_STRING(kElementMsubsup, "msubsup");
++NS_NAMED_LITERAL_STRING(kElementMsup, "msup");
++NS_NAMED_LITERAL_STRING(kElementMtable, "mtable");
++NS_NAMED_LITERAL_STRING(kElementMtd, "mtd");
++NS_NAMED_LITERAL_STRING(kElementMtext, "mtext");
++NS_NAMED_LITERAL_STRING(kElementMtr, "mtr");
++NS_NAMED_LITERAL_STRING(kElementMunder, "munder");
++NS_NAMED_LITERAL_STRING(kElementMunderover, "munderover");
++NS_NAMED_LITERAL_STRING(kElementNone, "none");
++NS_NAMED_LITERAL_STRING(kValueBlock, "block");
++NS_NAMED_LITERAL_STRING(kValueBold, "bold");
++NS_NAMED_LITERAL_STRING(kValueBox, "box");
++NS_NAMED_LITERAL_STRING(kValueFalse, "false");
++NS_NAMED_LITERAL_STRING(kValueItalic, "italic");
++NS_NAMED_LITERAL_STRING(kValueMediummathspace, "mediummathspace");
++NS_NAMED_LITERAL_STRING(kValueNamespace, "http://www.w3.org/1998/Math/MathML");
++NS_NAMED_LITERAL_STRING(kValueNormal, "normal");
++NS_NAMED_LITERAL_STRING(kValueStatusline, "statusline");
++NS_NAMED_LITERAL_STRING(kValueThickmathspace, "thickmathspace");
++NS_NAMED_LITERAL_STRING(kValueThinmathspace, "thinmathspace");
++NS_NAMED_LITERAL_STRING(kValueToggle, "toggle");
++NS_NAMED_LITERAL_STRING(kValueTooltip, "tooltip");
++NS_NAMED_LITERAL_STRING(kValueTrue, "true");
++NS_NAMED_LITERAL_STRING(kValueUpdiagonalstrike, "updiagonalstrike");
++NS_NAMED_LITERAL_STRING(kValueVerythinmathspace, "verythinmathspace");
++
++#endif // nsMathMLNames_h__
+diff --git a/extensions/mathparser/src/nsMathMLOperatorDictionary.h b/extensions/mathparser/src/nsMathMLOperatorDictionary.h
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/src/nsMathMLOperatorDictionary.h
+@@ -0,0 +1,79 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * The University Of Queensland.
++ * Portions created by the Initial Developer are Copyright (C) 1999
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *   Roger B. Sidje <rbs@maths.uq.edu.au>
++ *   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
++ *   Frederic Wang <fred.wang@free.fr>
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++#ifndef nsMathMLOperatorDictionary_h__
++#define nsMathMLOperatorDictionary_h__
++
++typedef PRUint32 nsOperatorFlags;
++enum {
++  NS_MATHML_OPERATOR_FORM               = 0x3,
++  NS_MATHML_OPERATOR_FORM_INFIX         = 1,
++  NS_MATHML_OPERATOR_FORM_PREFIX        = 2,
++  NS_MATHML_OPERATOR_FORM_POSTFIX       = 3,
++
++  NS_MATHML_OPERATOR_LARGEOP            = 1<<7,
++  NS_MATHML_OPERATOR_MOVABLELIMITS      = 1<<9
++};
++
++#define NS_MATHML_OPERATOR_FORM_IS_INFIX(_flags) \
++  (NS_MATHML_OPERATOR_FORM_INFIX == ((_flags) & NS_MATHML_OPERATOR_FORM))
++
++#define NS_MATHML_OPERATOR_FORM_IS_PREFIX(_flags) \
++  (NS_MATHML_OPERATOR_FORM_PREFIX == ((_flags) & NS_MATHML_OPERATOR_FORM))
++
++#define NS_MATHML_OPERATOR_FORM_IS_POSTFIX(_flags) \
++  (NS_MATHML_OPERATOR_FORM_POSTFIX == ((_flags) & NS_MATHML_OPERATOR_FORM))
++
++#define NS_MATHML_OPERATOR_IS_LARGEOP(_flags) \
++  (NS_MATHML_OPERATOR_LARGEOP == ((_flags) & NS_MATHML_OPERATOR_LARGEOP))
++
++#define NS_MATHML_OPERATOR_IS_MOVABLELIMITS(_flags) \
++  (NS_MATHML_OPERATOR_MOVABLELIMITS == \
++   ((_flags) & NS_MATHML_OPERATOR_MOVABLELIMITS))
++
++class nsMathMLOperatorDictionary
++{
++public:
++  static void LookupOperator(const nsString& aOperator,
++                             nsOperatorFlags& aFlags) {}
++};
++
++#endif // nsMathMLOperatorDictionary_h__
+diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/src/nsMathParser.cpp
+--- a/extensions/mathparser/src/nsMathParser.cpp
++++ b/extensions/mathparser/src/nsMathParser.cpp
+@@ -32,24 +32,25 @@
+  * decision by deleting the provisions above and replace them with the notice
+  * and other provisions required by the GPL or the LGPL. If you do not delete
+  * the provisions above, a recipient may use your version of this file under
+  * the terms of any one of the MPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
+ 
+ #include "nsMathParser.h"
++#include "nsMathMLNames.h"
+ #include "nsMemory.h"
+ #include "nsIClassInfoImpl.h"
+ 
+ NS_IMPL_CLASSINFO(nsMathParser, NULL, 0, NS_MATHPARSER_CID)
+ NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
+ 
+ nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
+-  mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE)
++  mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+ {
+ }
+ 
+ nsMathParser::~nsMathParser()
+ {
+ }
+ 
+ NS_IMETHODIMP
+@@ -57,30 +58,35 @@ nsMathParser::GetParsingMode(MathParserM
+ {
+   *aParsingMode = mParsingMode;
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathParser::SetParsingMode(MathParserMode aParsingMode)
+ {
++  NS_ENSURE_TRUE(0 <= mParsingMode && mParsingMode < MATHPARSER_NUMBER_OF_MODES,
++                 NS_ERROR_ILLEGAL_VALUE);
+   mParsingMode = aParsingMode;
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathParser::GetReportErrors(PRBool *aReportErrors)
+ {
+   *aReportErrors = mReportErrors;
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathParser::SetReportErrors(PRBool aReportErrors)
+ {
++  if (!mConsoleService && aReportErrors) {
++    mConsoleService = do_GetService("@mozilla.org/consoleservice;1");
++  }
+   mReportErrors = aReportErrors;
+   return NS_OK;
+ }
+ 
+ NS_IMETHODIMP
+ nsMathParser::GetSplitMiTokens(PRBool *aSplitMiTokens)
+ {
+   *aSplitMiTokens = mSplitMiTokens;
+@@ -89,15 +95,496 @@ nsMathParser::GetSplitMiTokens(PRBool *a
+ 
+ NS_IMETHODIMP
+ nsMathParser::SetSplitMiTokens(PRBool aSplitMiTokens)
+ {
+   mSplitMiTokens = aSplitMiTokens;
+   return NS_OK;
+ }
+ 
++void
++nsMathParser::SendSyntaxErrorToConsole()
++{
++  if (!mError) {
++    mError = PR_TRUE;
++    if (mReportErrors && mConsoleService) {
++      // indicate the line where the error happens
++      nsAutoString data(NS_LITERAL_STRING("MathParser: syntax error line "));
++      data.AppendInt(mLineNumber);
++      data.Append(PRUnichar('\n'));
++      
++      // indicate a fragment of at most 20 characters before the error and
++      // which belongs to the same line
++      const PRUnichar *start = mStartLine;
++      PRUint8 max = 20;
++      if (mCurrentChar - start + 1 > max) {
++        start = mCurrentChar - max - 1;
++      }
++      data.Append(start, mCurrentChar - start + 1);
++      
++      // send the error message to the console
++      mConsoleService->LogStringMessage(data.get());
++    }
++  }
++}
++
+ NS_IMETHODIMP
+ nsMathParser::Parse(nsIDOMDocument*  aDocument,
+                     const nsAString& aString,
+                     nsIDOMElement**  aResult)
+ {
+-  return NS_ERROR_NOT_IMPLEMENTED;
++  NS_ENSURE_ARG_POINTER(aDocument);
++
++  // Determine the internal buffer of the input string
++  mCurrentChar = aString.BeginReading();
++  mLastChar = aString.EndReading();
++
++  // Initialize parameters
++  mLineNumber = 1;
++  mStartLine = mCurrentChar; 
++  mError = PR_FALSE;
++  mDocument = aDocument;
++
++  switch(mParsingMode) {
++
++    case MATHPARSER_MODE_SIMPLE: {
++      return NS_ERROR_NOT_IMPLEMENTED;
++      break;
++    }
++
++    case MATHPARSER_MODE_ITEX:
++      return NS_ERROR_NOT_IMPLEMENTED;
++      break;
++      
++    default:
++      break;
++  }
++
++  if (mError) {
++    return NS_ERROR_FAILURE;
++  }
++
++  return NS_OK;
+ }
++
++///////////////////////////////////////////////////////////////////////////////
++void
++nsMathParser::NewAttribute(const nsAString& aAttrName,
++                           const nsAString& aValue,
++                           nsIDOMAttr*&     aResult)
++{
++  nsCOMPtr<nsIDOMNode> nodeOut;
++  nsIDOMText *text;
++  mDocument->CreateTextNode(aValue, &text);
++  mDocument->CreateAttributeNS(kValueNamespace, aAttrName, &aResult);
++  aResult->AppendChild(text, getter_AddRefs(nodeOut));
++  text->Release();
++}
++
++void
++nsMathParser::NewTokenElement(const nsAString& aTagName,
++                              const nsAString& aText,
++                              nsIDOMElement*&  aResult)
++{
++  nsCOMPtr<nsIDOMNode> nodeOut;
++  nsIDOMText *text;
++  mDocument->CreateTextNode(aText, &text);
++  NewMathMLElement(aTagName, aResult);
++  aResult->AppendChild(text, getter_AddRefs(nodeOut));
++  text->Release();
++}
++
++void
++nsMathParser::NewMathMLElement(const nsAString& aTagName,
++                               nsIDOMElement*&  aResult)
++{
++  mDocument->CreateElementNS(kValueNamespace, aTagName, &aResult);
++}
++
++void
++nsMathParser::NewMrowLikeElement(const nsAString&          aTagName,
++                                 nsTArray<nsIDOMElement*>* aChildren,
++                                 nsIDOMElement*&           aResult)
++{
++  PRUint32 len = aChildren->Length();
++
++  if (len == 1 && aTagName.Equals(kElementMrow)) {
++     aResult = (*aChildren)[0];
++  } else {
++    NewMathMLElement(aTagName, aResult);
++    for (PRUint32 i = 0; i < len; i++) {
++      AppendChildTo(aResult, ((*aChildren)[i]));
++    }
++  }
++
++  delete aChildren;
++}
++
++void
++nsMathParser::AttachAttribute(nsIDOMElement*& aParent,
++                              nsIDOMAttr*&    aAttr)
++{
++  nsCOMPtr<nsIDOMAttr> nodeOut;
++  aParent->SetAttributeNode(aAttr, getter_AddRefs(nodeOut));
++  aAttr->Release();
++}
++
++void
++nsMathParser::AppendChildTo(nsIDOMElement*& aParent,
++                            nsIDOMElement*& aChild)
++{
++  nsCOMPtr<nsIDOMNode> nodeOut;
++  aParent->AppendChild(aChild, getter_AddRefs(nodeOut));
++  aChild->Release();
++}
++
++void
++nsMathParser::AppendChildrenTo(nsIDOMElement*&           aResult,
++                               nsTArray<nsIDOMElement*>* aChildren)
++{
++  for (PRUint32 i = 0; i < aChildren->Length(); i++) {
++    AppendChildTo(aResult, ((*aChildren)[i]));
++  }
++
++  delete aChildren;
++}
++
++void
++nsMathParser::DeleteArrayOfElements(nsTArray<nsIDOMElement*>* aArray)
++{
++  for (PRUint32 i = 0; i < aArray->Length(); i++) {
++    ((*aArray)[i])->Release();
++  }
++
++  delete aArray;
++}
++
++void
++nsMathParser::DeleteArrayOfAttributes(nsTArray<nsIDOMAttr*>* aArray)
++{
++  for (PRUint32 i = 0; i < aArray->Length(); i++) {
++    ((*aArray)[i])->Release();
++  }
++
++  delete aArray;
++}
++////////////////////////////////////////////////////////////////////////////////
++PRBool
++nsMathParser::TryMatching(PRUnichar c)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++  if (*mCurrentChar != c) {
++    return PR_FALSE;
++  }
++
++  mCurrentChar++;
++
++  return PR_TRUE;
++}
++
++PRBool
++nsMathParser::TryMatching(const nsAString& aString)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++
++  if (aString.Length() > RemainingChars()) {
++    return PR_FALSE;
++  }
++
++  const PRUnichar *p1, *p2;
++  for (p1 = mCurrentChar, p2 = aString.BeginReading();
++       p2 < aString.EndReading(); p1++, p2++) {
++    if (*p1 != *p2) {
++      return PR_FALSE;
++    }
++  }
++  
++  mCurrentChar = p1;
++  return PR_TRUE;
++}
++
++PRBool
++nsMathParser::IsDigit(PRUnichar c)
++{ 
++  return ((PRUnichar('0') <= c && c <= PRUnichar('9')) ||
++          (PRUnichar(0x0660) <= c && c <= PRUnichar(0x0669)) // arabic digits
++          );
++}
++
++PRBool
++nsMathParser::IsNumberSeparator(PRUnichar c)
++{
++  return (c == PRUnichar('.') ||
++          c == PRUnichar(',') ||
++          c == PRUnichar(0x060C) // arabic comma
++          );
++}
++
++PRBool
++nsMathParser::TryMatchingMn(nsIDOMElement*& aResult)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++
++  const PRUnichar *p;
++
++  if (*mCurrentChar == PRUnichar(0x221E)) { // infinite
++    p = mCurrentChar + 1;
++  } else {
++    // Check whether we are pointing to a digit
++    if (!IsDigit(*mCurrentChar)) {
++      return PR_FALSE;
++    }
++    // Move the pointer until we no longer have a digit or a number separator
++    PRBool sepFound = PR_FALSE;
++    for (p = mCurrentChar + 1; p < mLastChar; p++) {
++      // ensure that the number contains at most one separator
++      if (IsNumberSeparator(*p)) {
++        if (sepFound) {
++          break;
++        }
++        sepFound = PR_TRUE;
++      } else if (!IsDigit(*p)) {
++        break;
++      }
++    }
++    
++    // Ignore a separator at the end of a number
++    if (IsNumberSeparator(*(p-1))) {
++      p--;
++    }
++  }
++    
++  // Now build a <mn/> with the number read
++  NewTokenElement(kElementMn,
++                  nsAutoString(mCurrentChar, p - mCurrentChar), aResult);
++
++  mCurrentChar = p;
++  return PR_TRUE;
++}
++
++PRBool
++nsMathParser::IsLetter(PRUnichar c)
++{
++  return (// Basic Latin 
++          (PRUnichar('A') <= c && c <= PRUnichar('Z')) ||
++          (PRUnichar('a') <= c && c <= PRUnichar('z')) ||
++
++          // Latin-1 Supplement
++          (PRUnichar(0x00C0) <= c && c <= PRUnichar(0x00FF) &&
++           c != PRUnichar(0x00D7) && c != PRUnichar(0x00F7)) ||  
++
++          // Latin Extended-A, Latin Extended-B
++          (PRUnichar(0x0100) <= c && c <= PRUnichar(0x024F)) ||
++          
++          // Latin Extended Additional
++          (PRUnichar(0x1E00) <= c && c <= PRUnichar(0x1EFF)) ||
++          
++          // Latin Extended-C
++          (PRUnichar(0x2C60) <= c && c <= PRUnichar(0x2C7F)) ||
++          
++          // Latin Extended-D
++          (PRUnichar(0xA720) <= c && c <= PRUnichar(0xA7FF)) ||
++          
++          // Greek and Coptic
++          (PRUnichar(0x0370) <= c && c <= PRUnichar(0x03FF)) ||
++
++          // Greek Extended
++          (PRUnichar(0x1F00) <= c && c <= PRUnichar(0x1FFF))
++          );
++}
++
++PRBool
++nsMathParser::TryMatchingMi(nsIDOMElement*& aResult)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++
++  // Check whether we are pointing to a letter
++  if (!IsLetter(*mCurrentChar)) {
++    return PR_FALSE;
++  }
++
++  // Determine the text of the <mi/>
++  // if mSplitMiTokens option is specified, we use only a single letter
++  const PRUnichar *p = mCurrentChar + 1;
++  if (!mSplitMiTokens) {
++    // Move the pointer until we no longer have a letter
++    while (p < mLastChar && (IsLetter(*p))) {
++      p++;
++    }
++  }
++
++  // Now build a <mi/> with the identifier read
++  NewTokenElement(kElementMi,
++                  nsAutoString(mCurrentChar, p - mCurrentChar), aResult);
++ 
++  mCurrentChar = p;
++  return PR_TRUE;
++}
++
++PRBool
++nsMathParser::IsOpeningQuote(PRUnichar c)
++{
++  return (c == PRUnichar(0x0022) ||
++          c == PRUnichar(0x00AB) ||
++          c == PRUnichar(0x2039) ||
++          c == PRUnichar(0x201C) ||
++          c == PRUnichar(0x2018));
++}
++
++PRBool
++nsMathParser::IsClosingQuoteOf(PRUnichar c, PRUnichar open)
++{
++  if (open == PRUnichar(0x0022)) {
++    return (c == PRUnichar(0x0022));
++  }
++  if (open == PRUnichar(0x00AB)) {
++    return (c == PRUnichar(0x00BB));
++  }
++  if (open == PRUnichar(0x2039)) {
++    return (c == PRUnichar(0x203A));
++  }
++  if (open == PRUnichar(0x201C)) {
++    return (c == PRUnichar(0x201D) || c == PRUnichar(0x201E));
++  }
++  if (open == PRUnichar(0x2018)) {
++    return (c == PRUnichar(0x2019) || c == PRUnichar(0x201A));
++  }
++  return PR_FALSE;
++}
++
++PRBool
++nsMathParser::TryMatchingMs(nsIDOMElement*& aResult)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++
++  // Check whether we are pointing to an opening quote
++  PRUnichar open = *mCurrentChar;
++  if (!IsOpeningQuote(open)) {
++    return PR_FALSE;
++  }
++
++  // Move the pointer until we reach the closing quote
++  const PRUnichar *p;
++  for (p = mCurrentChar + 1; p < mLastChar; p++) {
++    if (IsClosingQuoteOf(*p, open)) {
++      break;
++    }
++  }
++  
++  if (p == mLastChar) {
++    return PR_FALSE;
++  }
++
++  PRUnichar close = *p;
++  mCurrentChar++;
++
++  // Now build a <ms/>
++  nsAutoString data;
++  data = nsAutoString(mCurrentChar, p - mCurrentChar);
++  NewTokenElement(kElementMs, data, aResult);
++  
++  // attach open attribute
++  data = open;
++  aResult->SetAttribute(kAttributeOpen, data);
++
++  // attach close attribute
++  data = close;
++  aResult->SetAttribute(kAttributeClose, data);
++  
++  mCurrentChar = p + 1;
++  return PR_TRUE;
++}
++
++PRBool
++nsMathParser::TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++
++  nsAutoString data;
++  aFlags = 0;
++
++  // First, try multiple char operator 
++  if (*mCurrentChar == PRUnichar('!') ||
++      *mCurrentChar == PRUnichar('&') ||
++      *mCurrentChar == PRUnichar('*') ||
++      *mCurrentChar == PRUnichar('+') ||
++      *mCurrentChar == PRUnichar('-') ||
++      *mCurrentChar == PRUnichar('.') ||
++      *mCurrentChar == PRUnichar('/') ||
++      *mCurrentChar == PRUnichar('!') ||
++      *mCurrentChar == PRUnichar(':') ||
++      *mCurrentChar == PRUnichar('<') ||
++      *mCurrentChar == PRUnichar('=') ||
++      *mCurrentChar == PRUnichar('>') ||
++      *mCurrentChar == PRUnichar('|')) {
++    
++    if (RemainingChars() >= 3) {
++      data = nsAutoString(mCurrentChar, 3);
++      nsMathMLOperatorDictionary::LookupOperator(data, aFlags);
++      if (aFlags) { mCurrentChar += 3; }
++    }
++
++    if (!aFlags && RemainingChars() >= 2) {
++      data = nsAutoString(mCurrentChar, 2);
++      nsMathMLOperatorDictionary::LookupOperator(data, aFlags);
++      if (aFlags) { mCurrentChar += 2; }
++    }
++  }
++
++  // Otherwise, simply try a single char operator
++  if (!aFlags) {
++    data = *mCurrentChar;
++    nsMathMLOperatorDictionary::LookupOperator(data, aFlags);
++    if (aFlags) { mCurrentChar++; }
++  }
++
++  // The operator is found, build a <mo/>
++  if (aFlags) {
++    NewTokenElement(kElementMo, data, aResult);
++    return PR_TRUE;
++  }
++
++  return PR_FALSE;
++}
++
++PRBool
++nsMathParser::IsWhiteSpace(PRUnichar c)
++{
++  return (c == PRUnichar(' ') ||
++          c == PRUnichar('\t') ||
++          c == PRUnichar('\n') ||
++          c == PRUnichar('\r'));
++}
++
++PRBool
++nsMathParser::TryMatchingMtext(nsIDOMElement*& aResult)
++{
++  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
++
++  // Check whether we are pointing to a space
++  if (IsWhiteSpace(*mCurrentChar)) {
++    return PR_FALSE;
++  }
++
++  // Move the pointer until we reach a space
++  const PRUnichar *p;
++  for (p = mCurrentChar + 1;
++       (p < mLastChar && (!IsWhiteSpace(*p))); p++);
++
++  // Now build a <mtext/>
++  NewTokenElement(kElementMs,
++                  nsAutoString(mCurrentChar, p - mCurrentChar), aResult);
++
++  mCurrentChar = p;
++  return PR_TRUE;
++}
++
++void
++nsMathParser::SkipWhiteSpaces()
++{
++  while (!IsEndOfBuffer() && IsWhiteSpace(*mCurrentChar)) {
++    if (*mCurrentChar == PRUnichar('\n')) {
++      mLineNumber++;
++      mStartLine = mCurrentChar+1;
++    }
++    mCurrentChar++;
++  }
++}
+diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/src/nsMathParser.h
+--- a/extensions/mathparser/src/nsMathParser.h
++++ b/extensions/mathparser/src/nsMathParser.h
+@@ -42,25 +42,109 @@
+ // {3e99222d-5d23-478a-aa60-4ceace7ff36b}
+ #define NS_MATHPARSER_CID \
+ { 0x3e99222d, 0x5d23, 0x478a, {0xaa, 0x60, 0x4c, 0xea, 0xce, 0x7f, 0xf3, 0x6b} }
+ 
+ #define NS_MATHPARSER_CONTRACTID \
+   "@mozilla.org/mathzilla/mathparser;1"
+ 
+ #include "nsIMathParser.h"
++#include "nsIConsoleService.h"
++#include "nsIDOMElement.h"
++#include "nsIDOMAttr.h"
++#include "nsIDOMText.h"
++#include "nsIDocument.h"
++#include "nsServiceManagerUtils.h"
++#include "nsStringAPI.h"
++#include "nsMathMLOperatorDictionary.h"
+ 
+ class nsMathParser : public nsIMathParser
+ {
+ public:
+   NS_DECL_NSIMATHPARSER
+   NS_DECL_ISUPPORTS
+ 
+   nsMathParser();
+   virtual ~nsMathParser();
+ 
+ protected:
+   MathParserMode mParsingMode;
+   PRBool         mReportErrors;
+   PRBool         mSplitMiTokens;
++
++  nsCOMPtr<nsIConsoleService> mConsoleService;
++
++  nsIDOMDocument*    mDocument;
++  const PRUnichar*   mCurrentChar;
++  const PRUnichar*   mLastChar;
++  const PRUnichar*   mSavedChar;
++  const PRUnichar*   mStartLine;
++  PRUint32           mLineNumber;
++  PRBool             mError; 
++
++  void
++  SendSyntaxErrorToConsole();
++
++  void
++  NewAttribute(const nsAString& aAttrName,
++               const nsAString& aValue,
++               nsIDOMAttr*&     aResult);
++
++  void
++  NewTokenElement(const nsAString& aTagName,
++                  const nsAString& aText,
++                  nsIDOMElement*&  aResult);
++
++  void
++  NewMathMLElement(const nsAString& aTagName,
++                   nsIDOMElement*&  aResult);
++
++  void
++  NewMrowLikeElement(const nsAString&          aTagName,
++                     nsTArray<nsIDOMElement*>* aChildren,
++                     nsIDOMElement*&           aResult);
++
++  void
++  AttachAttribute(nsIDOMElement*& aParent,
++                  nsIDOMAttr*&    aAttr);
++
++  void
++  AppendChildTo(nsIDOMElement*& aParent,
++                nsIDOMElement*& aChild);
++
++  void
++  AppendChildrenTo(nsIDOMElement*&           aParent,
++                   nsTArray<nsIDOMElement*>* aChildren);
++
++  void
++  DeleteArrayOfElements(nsTArray<nsIDOMElement*>* aArray);
++
++  void
++  DeleteArrayOfAttributes(nsTArray<nsIDOMAttr*>* aArray);
++
++  PRUint32  RemainingChars() { return mLastChar - mCurrentChar; }
++  PRBool    IsEndOfBuffer()  { return mLastChar == mCurrentChar; }
++  void      SaveCharPos() { mSavedChar = mCurrentChar; }
++  void      GoBackToSavedChar() { mCurrentChar = mSavedChar; }
++
++  PRBool TryMatching(PRUnichar c);
++  PRBool TryMatching(const nsAString& aString);
++
++  PRBool IsDigit(PRUnichar c);
++  PRBool IsNumberSeparator(PRUnichar c);
++  PRBool TryMatchingMn(nsIDOMElement*& aResult);
++
++  PRBool IsLetter(PRUnichar c);
++  PRBool TryMatchingMi(nsIDOMElement*& aResult);
++
++  PRBool IsOpeningQuote(PRUnichar c);
++  PRBool IsClosingQuoteOf(PRUnichar c, PRUnichar open);
++  PRBool TryMatchingMs(nsIDOMElement*& aResult);
++
++  void   LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
++  PRBool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
++
++  PRBool IsWhiteSpace(PRUnichar c);
++  PRBool TryMatchingMtext(nsIDOMElement*& aResult);
++  void   SkipWhiteSpaces();
+ };
+ 
+ #endif // nsMathParser_h__

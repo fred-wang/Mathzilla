@@ -1,0 +1,483 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Parent 9ba0955e5067a7889ec6fc44076333099ead00a8
+# Add a simple mode to mathparser
+
+diff --git a/extensions/mathparser/src/Makefile.in b/extensions/mathparser/src/Makefile.in
+--- a/extensions/mathparser/src/Makefile.in
++++ b/extensions/mathparser/src/Makefile.in
+@@ -47,16 +47,17 @@ XPI_NAME = mathparser
+ 
+ MODULE           = mathparser
+ LIBRARY_NAME     = mathparser
+ SHORT_LIBNAME    = mathpars
+ IS_COMPONENT 	 = 1
+ MODULE_NAME      = nsMathParser
+ 
+ CPPSRCS += \
++  nsSimpleParser.tab.cpp \
+   nsMathParser.cpp \
+   nsMathParserModule.cpp \
+   nsMathMLOperatorDictionary.cpp \
+   $(NULL)
+ 
+ EXTRA_DSO_LDOPTS = \
+   $(DIST)/lib/$(LIB_PREFIX)xpcomglue_s.$(LIB_SUFFIX) \
+   $(XPCOM_FROZEN_LDOPTS) \
+@@ -65,8 +66,11 @@ EXTRA_DSO_LDOPTS = \
+ 
+ ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
+   EXTRA_DSO_LDOPTS += \
+     $(TK_LIBS) \
+     $(NULL)
+ endif 
+ 
+ include $(topsrcdir)/config/rules.mk
++
++nsSimpleParser.tab.cpp: nsSimpleParser.ypp
++	$(BISON) $<
+diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/src/nsMathParser.cpp
+--- a/extensions/mathparser/src/nsMathParser.cpp
++++ b/extensions/mathparser/src/nsMathParser.cpp
+@@ -33,16 +33,17 @@
+  * and other provisions required by the GPL or the LGPL. If you do not delete
+  * the provisions above, a recipient may use your version of this file under
+  * the terms of any one of the MPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
+ 
+ #include "nsMathParser.h"
+ #include "nsMathMLNames.h"
++#include "nsSimpleParser.tab.hpp"
+ #include "nsMemory.h"
+ #include "nsIClassInfoImpl.h"
+ 
+ NS_IMPL_CLASSINFO(nsMathParser, NULL, 0, NS_MATHPARSER_CID)
+ NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
+ 
+ nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
+   mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+@@ -143,17 +144,18 @@ nsMathParser::Parse(nsIDOMDocument*  aDo
+   mLineNumber = 1;
+   mStartLine = mCurrentChar; 
+   mError = PR_FALSE;
+   mDocument = aDocument;
+ 
+   switch(mParsingMode) {
+ 
+     case MATHPARSER_MODE_SIMPLE: {
+-      return NS_ERROR_NOT_IMPLEMENTED;
++      yy::nsSimpleParser parser(*this, *aResult);
++      parser.parse();
+       break;
+     }
+ 
+     case MATHPARSER_MODE_ITEX:
+       return NS_ERROR_NOT_IMPLEMENTED;
+       break;
+       
+     default:
+@@ -585,8 +587,114 @@ nsMathParser::SkipWhiteSpaces()
+   while (!IsEndOfBuffer() && IsWhiteSpace(*mCurrentChar)) {
+     if (*mCurrentChar == PRUnichar('\n')) {
+       mLineNumber++;
+       mStartLine = mCurrentChar+1;
+     }
+     mCurrentChar++;
+   }
+ }
++////////////////////////////////////////////////////////////////////////////////
++PRInt32
++nsMathParser::SimpleGetNextToken(nsSimpleParserSemanticType *aValue)
++{
++  SkipWhiteSpaces();
++
++  if (IsEndOfBuffer()) {
++    return yy::nsSimpleParser::token::END;
++  }
++
++  SaveCharPos();
++
++  if (TryMatchingMn(aValue->el)) {
++    return yy::nsSimpleParser::token::MN;
++  }
++
++  // exponents 2 and 3
++  if (TryMatching(PRUnichar(0xB2)) || TryMatching(PRUnichar(0xB3))) {
++    PRUnichar t = PRUnichar(PRUnichar(*mSavedChar - 0xB2));
++    NewTokenElement(kElementMn, nsAutoString(&t, 1), aValue->el);
++    return yy::nsSimpleParser::token::EXPONENT;
++  }
++ 
++  if (TryMatchingMi(aValue->el)) {
++    return yy::nsSimpleParser::token::MI;
++  }
++ 
++  nsOperatorFlags aFlags;
++
++  // backslash may be used to ignore special behaviours of mo's
++  if (RemainingChars() >= 2 && TryMatching(PRUnichar('\\'))) {
++    if (!TryMatchingMo(aFlags, aValue->el)) {
++      // it's not an escaped mo, interpret it as a normal backslash
++      NewTokenElement(kElementMo, NS_LITERAL_STRING("\\"), aValue->el);
++    } // otherwise, token has been created in TryMatchingMo
++    return yy::nsSimpleParser::token::MO;
++  }
++  
++  if (TryMatchingMo(aFlags, aValue->el)) {
++    
++    if (*mSavedChar == PRUnichar('(')) {
++      return yy::nsSimpleParser::token::MO_OPEN;
++    }
++
++    if (*mSavedChar == PRUnichar('[')) {
++      return yy::nsSimpleParser::token::MO_OPEN_BRACKET;
++    }
++
++    if (*mSavedChar == PRUnichar('{')) {
++      return yy::nsSimpleParser::token::MO_OPEN_BRACE;
++    }
++
++    if (*mSavedChar == PRUnichar(')')) {
++      return yy::nsSimpleParser::token::MO_CLOSE;
++    }
++
++    if (*mSavedChar == PRUnichar(']')) {
++      return yy::nsSimpleParser::token::MO_CLOSE_BRACKET;
++    }
++
++    if (*mSavedChar == PRUnichar('}')) {
++      return yy::nsSimpleParser::token::MO_CLOSE_BRACE;
++    }
++
++    if (*mSavedChar == PRUnichar('/')) {
++      return yy::nsSimpleParser::token::MO_FRAC;
++    }
++    
++    if (*mSavedChar == PRUnichar(0x221A)) {
++      return yy::nsSimpleParser::token::MO_SQUARE_ROOT;
++    }
++
++    if (*mSavedChar == PRUnichar(0x221B)) {
++      return yy::nsSimpleParser::token::MO_CUBE_ROOT;
++    }
++
++    if (*mSavedChar == PRUnichar(0x221C)) {
++      return yy::nsSimpleParser::token::MO_FOURTH_ROOT;
++    }
++
++    if (*mSavedChar == PRUnichar('_')) {
++      return yy::nsSimpleParser::token::MO_SUB;
++    }
++
++    if (*mSavedChar == PRUnichar('^')) {
++      return yy::nsSimpleParser::token::MO_SUP;
++    }
++
++    if (NS_MATHML_OPERATOR_IS_LARGEOP(aFlags) &&
++        NS_MATHML_OPERATOR_IS_MOVABLELIMITS(aFlags)) {
++      return yy::nsSimpleParser::token::MO_LARGEOP_MOVABLELIMITS;
++    }
++
++    return yy::nsSimpleParser::token::MO;
++  }
++
++  if (TryMatchingMs(aValue->el)) {
++    return yy::nsSimpleParser::token::MS;
++  }
++
++  if (TryMatchingMtext(aValue->el)) {
++    return yy::nsSimpleParser::token::MTEXT;
++  }
++  
++  return yy::nsSimpleParser::token::END;
++}
+diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/src/nsMathParser.h
+--- a/extensions/mathparser/src/nsMathParser.h
++++ b/extensions/mathparser/src/nsMathParser.h
+@@ -51,18 +51,31 @@
+ #include "nsIDOMElement.h"
+ #include "nsIDOMAttr.h"
+ #include "nsIDOMText.h"
+ #include "nsIDocument.h"
+ #include "nsServiceManagerUtils.h"
+ #include "nsStringAPI.h"
+ #include "nsMathMLOperatorDictionary.h"
+ 
++namespace yy {
++class nsSimpleParser;
++}
++
+ class nsMathParser : public nsIMathParser
+ {
++  friend class yy::nsSimpleParser;
++
++  union nsSimpleParserSemanticType
++  {
++    nsTArray<nsIDOMElement*>* list;
++    nsIDOMElement*            el;
++    void*                     empty;
++  };
++
+ public:
+   NS_DECL_NSIMATHPARSER
+   NS_DECL_ISUPPORTS
+ 
+   nsMathParser();
+   virtual ~nsMathParser();
+ 
+ protected:
+@@ -140,11 +153,13 @@ protected:
+   PRBool TryMatchingMs(nsIDOMElement*& aResult);
+ 
+   void   LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
+   PRBool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
+ 
+   PRBool IsWhiteSpace(PRUnichar c);
+   PRBool TryMatchingMtext(nsIDOMElement*& aResult);
+   void   SkipWhiteSpaces();
++
++  PRInt32 SimpleGetNextToken(nsSimpleParserSemanticType *aValue);
+ };
+ 
+ #endif // nsMathParser_h__
+diff --git a/extensions/mathparser/src/nsSimpleParser.ypp b/extensions/mathparser/src/nsSimpleParser.ypp
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/src/nsSimpleParser.ypp
+@@ -0,0 +1,235 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2010
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++%code requires {
++#include "nsMathParser.h"
++#include "nsMathMLNames.h"
++}
++%skeleton "lalr1.cc"
++%defines
++%define parser_class_name "nsSimpleParser"
++%parse-param { nsMathParser&     aMathParser }
++%parse-param { nsIDOMElement*&   aResult     }
++%lex-param   { nsMathParser&     aMathParser }
++
++%union {
++  nsTArray<nsIDOMElement*>* list;
++  nsIDOMElement*            el;
++  void*                     empty;
++}
++
++%{ 
++#define yylex(aValue, aMathParser) \
++  aMathParser.SimpleGetNextToken((nsMathParser::nsSimpleParserSemanticType*) \
++                                  aValue)
++
++void
++yy::nsSimpleParser::error (const yy::nsSimpleParser::location_type& l,
++                           const std::string& m)
++{
++  aMathParser.SendSyntaxErrorToConsole();
++}
++%}
++
++%token<empty> END
++%token<el>    MI MN MTEXT MS
++%token<el>    MO MO_OPEN MO_CLOSE MO_OPEN_BRACKET MO_CLOSE_BRACKET
++%token<el>    MO_OPEN_BRACE MO_CLOSE_BRACE
++%token<el>    MO_LARGEOP_MOVABLELIMITS MO_FRAC MO_SUB MO_SUP
++%token<el>    MO_SQUARE_ROOT MO_CUBE_ROOT MO_FOURTH_ROOT EXPONENT
++
++%type<empty> result
++%type<el>    tokenTerm
++%type<el>    compoundTerm compoundTerm2 compoundTerm3 closedTerm math
++%type<list>  compoundTermList
++
++%start result
++
++%destructor {
++  if ($$) {
++    $$->Release();
++  }
++} <el>
++
++%destructor {
++  if ($$) {
++    aMathParser.DeleteArrayOfElements($$);
++  }
++} <list>
++
++%%
++result: math {
++  aResult = $1;
++};
++
++math: compoundTermList {
++  aMathParser.NewMrowLikeElement(kElementMath, $1, $$);
++}
++
++compoundTermList: compoundTerm {
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement($1);
++} | compoundTermList compoundTerm {
++  $$ = $1;
++  $$->AppendElement($2);
++}
++
++compoundTerm: compoundTerm MO_FRAC compoundTerm {
++  $2->Release();
++  aMathParser.NewMathMLElement(kElementMfrac, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | compoundTerm2 {
++  $$ = $1;
++}
++
++compoundTerm2: MO_SQUARE_ROOT compoundTerm2 {
++  $1->Release();
++  aMathParser.NewMathMLElement(kElementMsqrt, $$);
++  aMathParser.AppendChildTo($$, $2);
++} | MO_CUBE_ROOT compoundTerm2 {
++  $1->Release();
++  aMathParser.NewMathMLElement(kElementMroot, $$);
++  nsIDOMElement* mn;
++  aMathParser.NewTokenElement(kElementMn, NS_LITERAL_STRING("3"), mn);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mn);
++}  | MO_FOURTH_ROOT compoundTerm2 {
++  $1->Release();
++  aMathParser.NewMathMLElement(kElementMroot, $$);
++  nsIDOMElement* mn;
++  aMathParser.NewTokenElement(kElementMn, NS_LITERAL_STRING("4"), mn);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mn);
++} | compoundTerm3 {
++  $$ = $1;
++}
++
++compoundTerm3: MO_LARGEOP_MOVABLELIMITS MO_SUB closedTerm MO_SUP closedTerm {
++  $2->Release();
++  $4->Release();
++  aMathParser.NewMathMLElement(kElementMunderover, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $5);
++} | MO_LARGEOP_MOVABLELIMITS MO_SUP closedTerm MO_SUB closedTerm {
++  $2->Release();
++  $4->Release();
++  aMathParser.NewMathMLElement(kElementMunderover, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $5);
++  aMathParser.AppendChildTo($$, $3);
++} | MO_LARGEOP_MOVABLELIMITS MO_SUB closedTerm {
++  $2->Release();
++  aMathParser.NewMathMLElement(kElementMunder, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | MO_LARGEOP_MOVABLELIMITS MO_SUP closedTerm {
++  $2->Release();
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | closedTerm MO_SUB closedTerm MO_SUP closedTerm {
++  $2->Release();
++  $4->Release();
++  aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $5);
++} | closedTerm MO_SUP closedTerm MO_SUB closedTerm {
++  $2->Release();
++  $4->Release();
++  aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $5);
++  aMathParser.AppendChildTo($$, $3);
++}  | closedTerm MO_SUB closedTerm {
++  $2->Release();
++  aMathParser.NewMathMLElement(kElementMsub, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | closedTerm MO_SUP closedTerm {
++  $2->Release();
++  aMathParser.NewMathMLElement(kElementMsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | closedTerm EXPONENT {
++  aMathParser.NewMathMLElement(kElementMsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $2);
++} | closedTerm {
++  $$ = $1;
++}
++
++closedTerm: tokenTerm {
++  $$ = $1;
++} | MO_OPEN compoundTermList MO_CLOSE  {
++  $2->InsertElementAt(0, $1);
++  $2->AppendElement($3);
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, $$);
++} | MO_OPEN_BRACKET compoundTermList MO_CLOSE_BRACKET {
++  $2->InsertElementAt(0, $1);
++  $2->AppendElement($3);
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, $$);
++} | MO_OPEN_BRACE closedTerm MO_CLOSE_BRACE  {
++  $1->Release();
++  $3->Release();
++  $$ = $2;
++} | MO_OPEN_BRACE compoundTermList MO_CLOSE_BRACE {
++  $1->Release();
++  $3->Release();
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, $$);
++} | MO_OPEN MO_CLOSE {
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $2);
++} | MO_OPEN_BRACKET MO_CLOSE_BRACKET {
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $2);
++} | MO_OPEN_BRACE MO_CLOSE_BRACE {
++  $1->Release();
++  $2->Release();
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++}
++
++tokenTerm: MI | MN | MO | MS | MTEXT | EXPONENT | MO_FRAC | MO_SQUARE_ROOT |
++           MO_CUBE_ROOT | MO_FOURTH_ROOT | MO_SUB | MO_SUP |
++           MO_LARGEOP_MOVABLELIMITS {
++  $$ = $1;
++}
++%%

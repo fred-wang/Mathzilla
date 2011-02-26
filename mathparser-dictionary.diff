@@ -1,0 +1,398 @@
+# HG changeset patch
+# Parent b1631c81b9ed7e438a612a7707964410d5187f6b
+
+diff --git a/extensions/mathparser/src/Makefile.in b/extensions/mathparser/src/Makefile.in
+--- a/extensions/mathparser/src/Makefile.in
++++ b/extensions/mathparser/src/Makefile.in
+@@ -49,16 +49,17 @@ MODULE           = mathparser
+ LIBRARY_NAME     = mathparser
+ SHORT_LIBNAME    = mathpars
+ IS_COMPONENT 	 = 1
+ MODULE_NAME      = nsMathParser
+ 
+ CPPSRCS += \
+   nsMathParser.cpp \
+   nsMathParserModule.cpp \
++  nsMathMLOperatorDictionary.cpp \
+   $(NULL)
+ 
+ EXTRA_DSO_LDOPTS = \
+   $(DIST)/lib/$(LIB_PREFIX)xpcomglue_s.$(LIB_SUFFIX) \
+   $(XPCOM_FROZEN_LDOPTS) \
+   $(NSPR_LIBS) \
+   $(NULL)
+ 
+diff --git a/extensions/mathparser/src/nsMathMLOperatorDictionary.cpp b/extensions/mathparser/src/nsMathMLOperatorDictionary.cpp
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/src/nsMathMLOperatorDictionary.cpp
+@@ -0,0 +1,321 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * The University Of Queensland.
++ * Portions created by the Initial Developer are Copyright (C) 1999
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *   Roger B. Sidje <rbs@maths.uq.edu.au>
++ *   Karl Tomlinson <karlt+@karlt.net>, Mozilla Corporation
++ *   Frederic Wang <fred.wang@free.fr>
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++// Note: this file is adapted from layout/mathml/nsMathMLOperators.cpp
++
++#include "nsCOMPtr.h"
++
++#include "nsIComponentManager.h"
++#include "nsIPersistentProperties2.h"
++#include "nsNetUtil.h"
++
++#include "nsDataHashtable.h"
++#include "nsCRT.h"
++#include "nsMathMLOperatorDictionary.h"
++
++static PRInt32  gTableRefCount = 0;
++static PRUint32 gOperatorCount = 0;
++static nsDataHashtable<nsStringHashKey, nsOperatorFlags> *gOperatorTable;
++static PRBool gInitialized   = PR_FALSE;
++
++#define kNotFound -1
++static const PRUnichar kNullCh  = PRUnichar('\0');
++static const PRUnichar kDashCh  = PRUnichar('#');
++static const PRUnichar kColonCh = PRUnichar(':');
++
++static void
++SetBooleanProperty(nsOperatorFlags* aOperatorFlags,
++                   nsString         aName)
++{
++  if (aName.IsEmpty())
++    return;
++
++  else if (aName.EqualsLiteral("largeop"))
++    *aOperatorFlags |= NS_MATHML_OPERATOR_LARGEOP;
++  else if (aName.EqualsLiteral("movablelimits"))
++    *aOperatorFlags |= NS_MATHML_OPERATOR_MOVABLELIMITS;
++}
++
++static PRBool
++SetOperator(nsOperatorFlags  aForm,
++            const nsCString& aOperator,
++            nsString&        aAttributes)
++
++{
++  // aOperator is in the expanded format \uNNNN\uNNNN ...
++  // First compress these Unicode points to the internal nsString format
++  PRInt32 i = 0;
++  nsAutoString name, value;
++  PRInt32 len = aOperator.Length();
++  PRUnichar c = aOperator[i++];
++  PRUint32 state  = 0;
++  PRUnichar uchar = 0;
++  while (i <= len) {
++    if (0 == state) {
++      if (c != '\\')
++        return PR_FALSE;
++      if (i < len)
++        c = aOperator[i];
++      i++;
++      if (('u' != c) && ('U' != c))
++        return PR_FALSE;
++      if (i < len)
++        c = aOperator[i];
++      i++;
++      state++;
++    }
++    else {
++      if (('0' <= c) && (c <= '9'))
++         uchar = (uchar << 4) | (c - '0');
++      else if (('a' <= c) && (c <= 'f'))
++         uchar = (uchar << 4) | (c - 'a' + 0x0a);
++      else if (('A' <= c) && (c <= 'F'))
++         uchar = (uchar << 4) | (c - 'A' + 0x0a);
++      else return PR_FALSE;
++      if (i < len)
++        c = aOperator[i];
++      i++;
++      state++;
++      if (5 == state) {
++        value.Append(uchar);
++        uchar = 0;
++        state = 0;
++      }
++    }
++  }
++  if (0 != state) return PR_FALSE;
++
++  // Quick return when the caller doesn't care about the attributes and just
++  // wants to know if this is a valid operator (this is the case at the first
++  // pass of the parsing of the dictionary in InitOperators())
++  if (!aForm) return PR_TRUE;
++
++  value.AppendInt(aForm);
++  nsAutoString key(value);
++  nsOperatorFlags flags = aForm;
++
++#ifdef NS_DEBUG
++  NS_LossyConvertUTF16toASCII str(aAttributes);
++#endif
++  // Loop over the space-delimited list of attributes
++  aAttributes.Append(kNullCh);  // put an extra null at the end
++  PRUnichar* start = aAttributes.BeginWriting();
++  PRUnichar* end   = start;
++  while ((kNullCh != *start) && (kDashCh != *start)) {
++    name.SetLength(0);
++    value.SetLength(0);
++    // skip leading space, the dash amounts to the end of the line
++    while ((kNullCh!=*start) && (kDashCh!=*start) &&
++           nsCRT::IsAsciiSpace(*start)) {
++      ++start;
++    }
++    end = start;
++    // look for ':'
++    while ((kNullCh!=*end) && (kDashCh!=*end) && !nsCRT::IsAsciiSpace(*end) &&
++           (kColonCh!=*end)) {
++      ++end;
++    }
++    // If ':' is not found, then it's a boolean property
++    PRBool IsBooleanProperty = (kColonCh != *end);
++    *end = kNullCh; // end segment here
++    // this segment is the name
++    if (start < end) {
++      name.Assign(start);
++    }
++    if (IsBooleanProperty) {
++      SetBooleanProperty(&flags, name);
++    } else {
++      start = ++end;
++      // look for space or end of line
++      while ((kNullCh!=*end) && (kDashCh!=*end) &&
++             !nsCRT::IsAsciiSpace(*end)) {
++        ++end;
++      }
++      *end = kNullCh; // end segment here
++    }
++    start = ++end;
++  }
++
++  // Add operator to hash table
++  gOperatorTable->Put(key, flags);
++
++  return PR_TRUE;
++}
++
++static nsresult
++InitOperators(void)
++{
++  PRBool tableInitialized = PR_FALSE;
++
++  // Load the property file containing the Operator Dictionary
++  nsresult rv;
++  nsCOMPtr<nsIPersistentProperties> mathfontProp;
++  rv = NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(mathfontProp),
++       NS_LITERAL_CSTRING("resource://gre/res/fonts/mathfont.properties"));
++  if (NS_FAILED(rv)) return rv;
++
++  // Parse the Operator Dictionary in two passes.
++  // The first pass is to count the number of operators; the second pass is to
++  // allocate the necessary space for them and to add them in the hash table.
++  for (PRInt32 pass = 1; pass <= 2; pass++) {
++    nsCOMPtr<nsISimpleEnumerator> iterator;
++    if (NS_SUCCEEDED(mathfontProp->Enumerate(getter_AddRefs(iterator)))) {
++      PRBool more;
++      PRUint32 index = 0;
++      nsCAutoString name;
++      nsAutoString attributes;
++      while ((NS_SUCCEEDED(iterator->HasMoreElements(&more))) && more) {
++        nsCOMPtr<nsIPropertyElement> element;
++        if (NS_SUCCEEDED(iterator->GetNext(getter_AddRefs(element)))) {
++          if (NS_SUCCEEDED(element->GetKey(name)) &&
++              NS_SUCCEEDED(element->GetValue(attributes))) {
++            // expected key: operator.\uNNNN.{infix,postfix,prefix}
++            if ((21 <= name.Length()) && (0 == name.Find("operator.\\u"))) {
++              name.Cut(0, 9); // 9 is the length of "operator.";
++              PRInt32 len = name.Length();
++              nsOperatorFlags form = 0;
++              if (kNotFound != name.RFind(".infix")) {
++                form = NS_MATHML_OPERATOR_FORM_INFIX;
++                len -= 6;  // 6 is the length of ".infix";
++              }
++              else if (kNotFound != name.RFind(".postfix")) {
++                form = NS_MATHML_OPERATOR_FORM_POSTFIX;
++                len -= 8; // 8 is the length of ".postfix";
++              }
++              else if (kNotFound != name.RFind(".prefix")) {
++                form = NS_MATHML_OPERATOR_FORM_PREFIX;
++                len -= 7; // 7 is the length of ".prefix";
++              }
++              else continue; // input is not applicable
++              name.SetLength(len);
++              if (2 == pass) { // allocate space and start the storage
++                if (!gOperatorTable) {
++                  if (0 == gOperatorCount) return NS_ERROR_UNEXPECTED;
++                  gOperatorTable = new nsDataHashtable<nsStringHashKey,
++                                                       nsOperatorFlags>();
++                  if (!gOperatorTable) return NS_ERROR_OUT_OF_MEMORY;
++                  gOperatorTable->Init(gOperatorCount);
++                }
++              }
++              else {
++                form = 0; // to quickly return from SetOperator() at pass 1
++              }
++              // See if the operator should be retained
++              if (SetOperator(form, name, attributes)) {
++                index++;
++                if (1 == pass) gOperatorCount = index;
++              }
++            }
++          }
++        }
++      }
++    }
++  }
++  return NS_OK;
++}
++
++static nsresult
++InitGlobals()
++{
++  gInitialized = PR_TRUE;
++  nsresult rv = NS_ERROR_OUT_OF_MEMORY;
++  rv = InitOperators();
++  if (NS_FAILED(rv))
++    nsMathMLOperatorDictionary::CleanUp();
++  return rv;
++}
++
++void
++nsMathMLOperatorDictionary::CleanUp()
++{
++  if (gOperatorTable) {
++    delete gOperatorTable;
++    gOperatorTable = nsnull;
++  }
++}
++
++void
++nsMathMLOperatorDictionary::AddRefTable(void)
++{
++  gTableRefCount++;
++}
++
++void
++nsMathMLOperatorDictionary::ReleaseTable(void)
++{
++  if (0 == --gTableRefCount) {
++    CleanUp();
++  }
++}
++
++static PRBool
++GetOperatorData(const nsString& aOperator,
++                nsOperatorFlags &aFlag)
++{
++  nsAutoString key(aOperator);
++  key.AppendInt(aFlag);
++  return gOperatorTable->Get(key, &aFlag);
++}
++
++void
++nsMathMLOperatorDictionary::LookupOperator(const nsString& aOperator,
++                                           nsOperatorFlags& aFlags)
++{
++  if (!gInitialized) {
++    InitGlobals();
++  }
++
++  if (gOperatorTable) {
++    nsOperatorFlags flags;
++    flags = NS_MATHML_OPERATOR_FORM_INFIX;
++    if (GetOperatorData(aOperator, flags)) {
++      aFlags |= flags;
++    }
++    flags = NS_MATHML_OPERATOR_FORM_POSTFIX;
++    if (GetOperatorData(aOperator, flags)) {
++      aFlags |= flags;
++    }
++    flags = NS_MATHML_OPERATOR_FORM_PREFIX;
++    if (GetOperatorData(aOperator, flags)) {
++      aFlags |= flags;
++    }
++  }
++}
+diff --git a/extensions/mathparser/src/nsMathMLOperatorDictionary.h b/extensions/mathparser/src/nsMathMLOperatorDictionary.h
+--- a/extensions/mathparser/src/nsMathMLOperatorDictionary.h
++++ b/extensions/mathparser/src/nsMathMLOperatorDictionary.h
+@@ -67,13 +67,17 @@ enum {
+ 
+ #define NS_MATHML_OPERATOR_IS_MOVABLELIMITS(_flags) \
+   (NS_MATHML_OPERATOR_MOVABLELIMITS == \
+    ((_flags) & NS_MATHML_OPERATOR_MOVABLELIMITS))
+ 
+ class nsMathMLOperatorDictionary
+ {
+ public:
++  static void AddRefTable(void);
++  static void ReleaseTable(void);
++  static void CleanUp();
++
+   static void LookupOperator(const nsString& aOperator,
+-                             nsOperatorFlags& aFlags) {}
++                             nsOperatorFlags& aFlags);
+ };
+ 
+ #endif // nsMathMLOperatorDictionary_h__
+diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/src/nsMathParser.cpp
+--- a/extensions/mathparser/src/nsMathParser.cpp
++++ b/extensions/mathparser/src/nsMathParser.cpp
+@@ -42,20 +42,22 @@
+ #include "nsIClassInfoImpl.h"
+ 
+ NS_IMPL_CLASSINFO(nsMathParser, NULL, 0, NS_MATHPARSER_CID)
+ NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
+ 
+ nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
+   mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+ {
++  nsMathMLOperatorDictionary::AddRefTable();
+ }
+ 
+ nsMathParser::~nsMathParser()
+ {
++  nsMathMLOperatorDictionary::ReleaseTable();
+ }
+ 
+ NS_IMETHODIMP
+ nsMathParser::GetParsingMode(MathParserMode *aParsingMode)
+ {
+   *aParsingMode = mParsingMode;
+   return NS_OK;
+ }

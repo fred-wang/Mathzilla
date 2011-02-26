@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is Mozilla MathML Project.
+   -
+   - The Initial Developer of the Original Code is
+   - Frederic Wang <fred.wang@free.fr>.
+   - Portions created by the Initial Developer are Copyright (C) 2010
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <title>Mathzilla Parser</title>
+<script type="text/javascript">
+<![CDATA[
+function parse(mode) {
+  // remove the previous result
+  var output = document.getElementById("output");
+  if (output.hasChildNodes()) {
+    output.removeChild(output.childNodes[0]);  
+  }
+
+  // itex mode: add opening and closing $$ if they are not specified by the user.
+  var text = document.getElementById("input").value;
+  if (mode == 1) {
+    if (!(/^(\s*)((\$(.|\n)*\$)|(\\\[(.|\n)*\\]))(\s*)$/.test(text))) {
+      text = "$$\n" + text + "\n$$";
+      document.getElementById("input").value = text;
+    }    
+  }
+
+  // XXXfred find a way to get rid of this PrivilegeManager...
+  netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+
+  // call mathparser
+  var mathparser = Components.classes['@mozilla.org/mathzilla/mathparser;1'].
+    createInstance(Components.interfaces.nsIMathParser);
+
+  mathparser.parsingMode = (mode == 0 ?
+    Components.interfaces.nsIMathParser.MATHPARSER_MODE_SIMPLE :
+    Components.interfaces.nsIMathParser.MATHPARSER_MODE_ITEX);
+  mathparser.reportErrors = false;
+  mathparser.splitMiTokens = false;
+
+  var node = mathparser.parse(document, text);
+  output.appendChild(node);
+}
+]]>
+  </script>
+
+</head>
+
+<body>
+
+<textarea id="input" rows="10" cols="80"/>
+
+<p><input type="button" onclick="parse(0)" value="Parse (Simple Mode)"/>
+   <input type="button" onclick="parse(1)" value="Parse (Itex Mode)"/></p>
+
+<div id="output"/>
+
+</body>
+</html>

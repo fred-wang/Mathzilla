@@ -1,0 +1,1050 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Parent b1f71b32b53cca2d8c0bd9c013ae3b8153bdfd24
+# Add unit tests to mathparser
+
+diff --git a/extensions/mathparser/Makefile.in b/extensions/mathparser/Makefile.in
+--- a/extensions/mathparser/Makefile.in
++++ b/extensions/mathparser/Makefile.in
+@@ -40,17 +40,17 @@ DEPTH     = ../..
+ topsrcdir = @top_srcdir@
+ srcdir    = @srcdir@
+ VPATH     = @srcdir@
+ 
+ include $(DEPTH)/config/autoconf.mk
+ 
+ MODULE = mathparser
+ 
+-DIRS = public src 
++DIRS = public src tests
+ 
+ XPI_NAME		= mathparser
+ INSTALL_EXTENSION_ID	= mathparser@mozilla.com
+ XPI_PKGNAME		= mathparser
+ 
+ DIST_FILES = install.rdf
+ 
+ include $(topsrcdir)/config/rules.mk
+diff --git a/extensions/mathparser/tests/Makefile.in b/extensions/mathparser/tests/Makefile.in
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/Makefile.in
+@@ -0,0 +1,49 @@
++#!gmake
++#
++# ***** BEGIN LICENSE BLOCK *****
++# Version: MPL 1.1/GPL 2.0/LGPL 2.1
++#
++# The contents of this file are subject to the Mozilla Public License Version
++# 1.1 (the "License"); you may not use this file except in compliance with
++# the License. You may obtain a copy of the License at
++# http://www.mozilla.org/MPL/
++#
++# Software distributed under the License is distributed on an "AS IS" basis,
++# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++# for the specific language governing rights and limitations under the
++# License.
++#
++# The Original Code is Mozilla MathML Project.
++#
++# The Initial Developer of the Original Code is
++# Frederic Wang <fred.wang@free.fr>.
++# Portions created by the Initial Developer are Copyright (C) 2010
++# the Initial Developer. All Rights Reserved.
++#
++# Contributor(s):
++#
++# Alternatively, the contents of this file may be used under the terms of
++# either the GNU General Public License Version 2 or later (the "GPL"), or
++# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++# in which case the provisions of the GPL or the LGPL are applicable instead
++# of those above. If you wish to allow use of your version of this file only
++# under the terms of either the GPL or the LGPL, and not to allow others to
++# use your version of this file under the terms of the MPL, indicate your
++# decision by deleting the provisions above and replace them with the notice
++# and other provisions required by the GPL or the LGPL. If you do not delete
++# the provisions above, a recipient may use your version of this file under
++# the terms of any one of the MPL, the GPL or the LGPL.
++#
++# ***** END LICENSE BLOCK *****
++
++DEPTH		= ../../..
++topsrcdir	= @top_srcdir@
++srcdir		= @srcdir@
++VPATH		= @srcdir@
++relativesrcdir	= extensions/mathparser/tests
++
++include $(DEPTH)/config/autoconf.mk
++
++XPCSHELL_TESTS = unit
++
++include $(topsrcdir)/config/rules.mk
+diff --git a/extensions/mathparser/tests/unit/head_mathparser.js b/extensions/mathparser/tests/unit/head_mathparser.js
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/head_mathparser.js
+@@ -0,0 +1,75 @@
++/* -*- Mode: Java; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2010
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++const kModeSimple = Components.interfaces.nsIMathParser.MATHPARSER_MODE_SIMPLE;
++const kModeItex = Components.interfaces.nsIMathParser.MATHPARSER_MODE_ITEX;
++
++var serializer = Components.
++  classes["@mozilla.org/xmlextras/xmlserializer;1"].
++  createInstance(Components.interfaces.nsIDOMSerializer);
++var mathparser = Components.
++  classes['@mozilla.org/mathzilla/mathparser;1'].
++  createInstance(Components.interfaces.nsIMathParser);
++var fstream =
++  Components.classes["@mozilla.org/network/file-input-stream;1"].  
++  createInstance(Components.interfaces.nsIFileInputStream);  
++var cstream =
++  Components.classes["@mozilla.org/intl/converter-input-stream;1"].  
++  createInstance(Components.interfaces.nsIConverterInputStream);  
++
++function mathparserCompare(aXmlFile, aTxtFile, aMode) {
++  var doc = do_parse_document(aXmlFile, "application/xml");
++  var string1 = serializer.serializeToString(doc.documentElement);
++ 
++  var file = do_get_file(aTxtFile);
++  var data = "";  
++  fstream.init(file, -1, 0, 0);  
++  cstream.init(fstream, "UTF-8", 0, 0);
++  let (str = {}) {
++    let read = 0;  
++    do {   
++      read = cstream.readString(0xffffffff, str);
++      data += str.value;
++    } while (read != 0);
++  }  
++  cstream.close();
++  
++  var output = mathparser.parse(doc, data, aMode);
++  var string2 = serializer.serializeToString(output);
++  do_check_eq(string1, string2);
++}
+diff --git a/extensions/mathparser/tests/unit/itex-arrays.txt b/extensions/mathparser/tests/unit/itex-arrays.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-arrays.txt
+@@ -0,0 +1,22 @@
++$$
++\array{ a & b \\
++        c & d }
++
++\array{ \array{0&1 \\ 1&0} & A \\
++         B & \array{0&1 \\ 1&0}}
++
++\array{ \arrayopts{\colalign{left right right}} a & b & c}
++
++\array{ \arrayopts{\colalign{left}} a & b & c}
++
++\array{ \arrayopts{\rowalign{top bottom bottom}} a \\ b \\ c}
++
++\array{ \arrayopts{\rowalign{top}} a \\ b \\ c}
++
++\array{ (1,1) & \cellopts{\rowspan{2}} \int dx & (1,3) \\
++        (2,1) &                                  (2,3) \\
++       (3,1) & (3,2)                          & (3,3) }
++
++\array{\cellopts{\colspan{3}} (1,1) \text{to} (1,3) & (1,4) \\
++           (2,1)  &   (2,2)   &   (2,3)    & (2,4)  }
++$$
+diff --git a/extensions/mathparser/tests/unit/itex-arrays.xml b/extensions/mathparser/tests/unit/itex-arrays.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-arrays.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- useless spaces generated by itex2MML between children have been removed --> 
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mtable><mtr><mtd><mi>a</mi></mtd><mtd><mi>b</mi></mtd></mtr><mtr><mtd><mi>c</mi></mtd><mtd><mi>d</mi></mtd></mtr></mtable></mrow><mrow><mtable><mtr><mtd><mrow><mtable><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr></mtable></mrow></mtd><mtd><mi>A</mi></mtd></mtr><mtr><mtd><mi>B</mi></mtd><mtd><mrow><mtable><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr></mtable></mrow></mtd></mtr></mtable></mrow><mrow><mtable columnalign="left right right"><mtr><mtd><mi>a</mi></mtd><mtd><mi>b</mi></mtd><mtd><mi>c</mi></mtd></mtr></mtable></mrow><mrow><mtable columnalign="left"><mtr><mtd><mi>a</mi></mtd><mtd><mi>b</mi></mtd><mtd><mi>c</mi></mtd></mtr></mtable></mrow><mrow><mtable rowalign="top bottom bottom"><mtr><mtd><mi>a</mi></mtd></mtr><mtr><mtd><mi>b</mi></mtd></mtr><mtr><mtd><mi>c</mi></mtd></mtr></mtable></mrow><mrow><mtable rowalign="top"><mtr><mtd><mi>a</mi></mtd></mtr><mtr><mtd><mi>b</mi></mtd></mtr><mtr><mtd><mi>c</mi></mtd></mtr></mtable></mrow><mrow><mtable><mtr><mtd><mo stretchy="false">(</mo><mn>1,1</mn><mo stretchy="false">)</mo></mtd><mtd rowspan="2"><mo>∫</mo><mi>dx</mi></mtd><mtd><mo stretchy="false">(</mo><mn>1,3</mn><mo stretchy="false">)</mo></mtd></mtr><mtr><mtd><mo stretchy="false">(</mo><mn>2,1</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>2,3</mn><mo stretchy="false">)</mo></mtd></mtr><mtr><mtd><mo stretchy="false">(</mo><mn>3,1</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>3,2</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>3,3</mn><mo stretchy="false">)</mo></mtd></mtr></mtable></mrow><mrow><mtable><mtr><mtd columnspan="3"><mo stretchy="false">(</mo><mn>1,1</mn><mo stretchy="false">)</mo><mtext>to</mtext><mo stretchy="false">(</mo><mn>1,3</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>1,4</mn><mo stretchy="false">)</mo></mtd></mtr><mtr><mtd><mo stretchy="false">(</mo><mn>2,1</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>2,2</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>2,3</mn><mo stretchy="false">)</mo></mtd><mtd><mo stretchy="false">(</mo><mn>2,4</mn><mo stretchy="false">)</mo></mtd></mtr></mtable></mrow></math>
+diff --git a/extensions/mathparser/tests/unit/itex-arrows.txt b/extensions/mathparser/tests/unit/itex-arrows.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-arrows.txt
+@@ -0,0 +1,68 @@
++$$
++\rightarrow ( = \to)
++\longrightarrow
++\Rightarrow ( = \implies)
++\hookrightarrow ( = \embedsin)
++\mapsto ( = \map)
++\leftarrow
++\longleftarrow
++\Leftarrow ( = \impliedby)
++\hookleftarrow
++\leftrightarrow
++\Leftrightarrow
++\Longleftrightarrow ( = \iff)
++\nearrow ( = \nearr)
++\nwarrow ( = \nwarr)
++\searrow ( = \searr)
++\swarrow ( = \swarr)
++\neArrow ( = \neArr)
++\nwArrow ( = \nwArr)
++\seArrow ( = \seArr)
++\swArrow ( = \swArr)
++\darr
++\Downarrow
++\uparr
++\Uparrow
++\downuparrow ( = \duparr = \updarr)
++\Updownarrow
++\leftsquigarrow
++\rightsquigarrow
++\leftrightsquigarrow
++\upuparrows
++\rightleftarrows
++\rightrightarrows
++\dashleftarrow
++\dashrightarrow
++\curvearrowleft
++\curvearrowbotright
++\downdownarrows
++\leftleftarrows
++\leftrightarrows
++\righttoleftarrow
++\lefttorightarrow
++\circlearrowleft
++\circlearrowright
++\curvearrowright
++\leftarrowtail
++\rightarrowtail
++\Lleftarrow
++\Rrightarrow
++\looparrowleft
++\looparrowright
++\Lsh
++\Rsh
++\twoheadleftarrow
++\twoheadrightarrow
++\nLeftarrow
++\nleftarrow
++\nLeftrightarrow
++\nleftrightarrow
++\nRightarrow
++\nrightarrow
++\downharpoonleft
++\downharpoonright
++\leftrightharpoons
++\rightleftharpoons
++\upharpoonleft
++\upharpoonright
++$$
+diff --git a/extensions/mathparser/tests/unit/itex-arrows.xml b/extensions/mathparser/tests/unit/itex-arrows.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-arrows.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mo>→</mo><mo stretchy="false">(</mo><mo>=</mo><mo>→</mo><mo stretchy="false">)</mo><mo>⟶</mo><mo>⇒</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇒</mo><mo stretchy="false">)</mo><mo>↪</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↪</mo><mo stretchy="false">)</mo><mo>↦</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↦</mo><mo stretchy="false">)</mo><mo>←</mo><mo>⟵</mo><mo>⇐</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇐</mo><mo stretchy="false">)</mo><mo>↩</mo><mo>↔</mo><mo>⇔</mo><mo>⇔</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇔</mo><mo stretchy="false">)</mo><mo>↗</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↗</mo><mo stretchy="false">)</mo><mo>↖</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↖</mo><mo stretchy="false">)</mo><mo>↘</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↘</mo><mo stretchy="false">)</mo><mo>↙</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↙</mo><mo stretchy="false">)</mo><mo>⇗</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇗</mo><mo stretchy="false">)</mo><mo>⇖</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇖</mo><mo stretchy="false">)</mo><mo>⇘</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇘</mo><mo stretchy="false">)</mo><mo>⇙</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⇙</mo><mo stretchy="false">)</mo><mo>↓</mo><mo>⇓</mo><mo>↑</mo><mo>⇑</mo><mo>↕</mo><mo stretchy="false">(</mo><mo>=</mo><mo>↕</mo><mo>=</mo><mo>↕</mo><mo stretchy="false">)</mo><mo>⇕</mo><mo>⇜</mo><mo>⇝</mo><mo>↭</mo><mo>⇈</mo><mo>⇄</mo><mo>⇉</mo><mo>⤎</mo><mo>⤏</mo><mo>↶</mo><mo>⤻</mo><mo>⇊</mo><mo>⇇</mo><mo>⇆</mo><mo>⟲</mo><mo>⟳</mo><mo>↺</mo><mo>↻</mo><mo>↷</mo><mo>↢</mo><mo>↣</mo><mo>⇚</mo><mo>⇛</mo><mo>↫</mo><mo>↬</mo><mo>↰</mo><mo>↱</mo><mo>↞</mo><mo>↠</mo><mo>⇍</mo><mo>↚</mo><mo>⇎</mo><mo>↮</mo><mo>⇏</mo><mo>↛</mo><mo>⇃</mo><mo>⇂</mo><mo>⇋</mo><mo>⇌</mo><mo>↿</mo><mo>↾</mo></math>
++
+diff --git a/extensions/mathparser/tests/unit/itex-delimiters-accents.txt b/extensions/mathparser/tests/unit/itex-delimiters-accents.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-delimiters-accents.txt
+@@ -0,0 +1,42 @@
++$$
++(x)
++[x]
++\langle x \rangle (\lang x \rang)
++\lbrace x \rbrace (\{x\})
++\lceil x \rceil
++\lfloor x \rfloor
++\uparrow
++\downarrow
++\updownarrow
++x \vert y
++\Vert x \Vert
++x/y
++\left( x \right)
++\big( x \bigr)
++\Big( x \Bigr)
++\bigg( x \biggr)
++\Bigg( x \Biggr)
++\bigl( x \bigr)
++\Bigl( x \Bigr)
++\biggl( x \biggr)
++\Biggl( x \Biggr)
++
++\bar{x}
++\overline{x} ( = \closure{x}  = \widebar{x})
++\underline{x}
++\vec{x}
++\widevec{x}
++\dot{x}
++\ddot{x}
++\dddot{x}
++\ddddot{x}
++\tilde{x}
++\widetilde{x}
++\check{x}
++\widecheck{x}
++\hat{x}
++\widehat{x}
++\slash{x}
++\boxed{x}
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-delimiters-accents.xml b/extensions/mathparser/tests/unit/itex-delimiters-accents.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-delimiters-accents.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- useless spaces generated by itex2MML between children have been removed --> 
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">[</mo><mi>x</mi><mo stretchy="false">]</mo><mo stretchy="false">⟨</mo><mi>x</mi><mo stretchy="false">⟩</mo><mo stretchy="false">(</mo><mo stretchy="false">⟨</mo><mi>x</mi><mo stretchy="false">⟩</mo><mo stretchy="false">)</mo><mo stretchy="false">{</mo><mi>x</mi><mo stretchy="false">}</mo><mo stretchy="false">(</mo><mo stretchy="false">{</mo><mi>x</mi><mo stretchy="false">}</mo><mo stretchy="false">)</mo><mo stretchy="false">⌈</mo><mi>x</mi><mo stretchy="false">⌉</mo><mo stretchy="false">⌊</mo><mi>x</mi><mo stretchy="false">⌋</mo><mo stretchy="false">↑</mo><mo stretchy="false">↓</mo><mo stretchy="false">↕</mo><mi>x</mi><mo stretchy="false">∣</mo><mi>y</mi><mo stretchy="false">∥</mo><mi>x</mi><mo stretchy="false">∥</mo><mi>x</mi><mo stretchy="false">/</mo><mi>y</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo maxsize="1.2em" minsize="1.2em">(</mo><mi>x</mi><mo maxsize="1.2em" minsize="1.2em">)</mo><mo maxsize="1.8em" minsize="1.8em">(</mo><mi>x</mi><mo maxsize="1.8em" minsize="1.8em">)</mo><mo maxsize="2.4em" minsize="2.4em">(</mo><mi>x</mi><mo maxsize="2.4em" minsize="2.4em">)</mo><mo maxsize="3em" minsize="3em">(</mo><mi>x</mi><mo maxsize="3em" minsize="3em">)</mo><mo maxsize="1.2em" minsize="1.2em">(</mo><mi>x</mi><mo maxsize="1.2em" minsize="1.2em">)</mo><mo maxsize="1.8em" minsize="1.8em">(</mo><mi>x</mi><mo maxsize="1.8em" minsize="1.8em">)</mo><mo maxsize="2.4em" minsize="2.4em">(</mo><mi>x</mi><mo maxsize="2.4em" minsize="2.4em">)</mo><mo maxsize="3em" minsize="3em">(</mo><mi>x</mi><mo maxsize="3em" minsize="3em">)</mo><mover><mi>x</mi><mo stretchy="false">¯</mo></mover><mover><mi>x</mi><mo>¯</mo></mover><mo stretchy="false">(</mo><mo>=</mo><mover><mi>x</mi><mo>¯</mo></mover><mo>=</mo><mover><mi>x</mi><mo>¯</mo></mover><mo stretchy="false">)</mo><munder><mi>x</mi><mo>̲</mo></munder><mover><mi>x</mi><mo stretchy="false">⇀</mo></mover><mover><mi>x</mi><mo>⇀</mo></mover><mover><mi>x</mi><mo>˙</mo></mover><mover><mi>x</mi><mo>¨</mo></mover><mover><mi>x</mi><mo>⃛</mo></mover><mover><mi>x</mi><mo>⃜</mo></mover><mover><mi>x</mi><mo stretchy="false">˜</mo></mover><mover><mi>x</mi><mo>˜</mo></mover><mover><mi>x</mi><mo stretchy="false">ˇ</mo></mover><mover><mi>x</mi><mo>ˇ</mo></mover><mover><mi>x</mi><mo stretchy="false">^</mo></mover><mover><mi>x</mi><mo>^</mo></mover><menclose notation="updiagonalstrike"><mi>x</mi></menclose><menclose notation="box"><mi>x</mi></menclose></math>
+diff --git a/extensions/mathparser/tests/unit/itex-environments.txt b/extensions/mathparser/tests/unit/itex-environments.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-environments.txt
+@@ -0,0 +1,71 @@
++$$
++\begin{matrix}
++  x_{11} & x_{12} \\
++  x_{21} & x_{22}
++\end{matrix}
++
++\begin{pmatrix}
++x_{11} & x_{12} \\
++x_{21} & x_{22}
++\end{pmatrix}
++
++\begin{bmatrix}
++x_{11} & x_{12} \\
++x_{21} & x_{22}
++\end{bmatrix}
++
++\begin{Bmatrix}
++x_{11} & x_{12} \\
++x_{21} & x_{22}
++\end{Bmatrix}
++
++\begin{vmatrix}
++x_{11} & x_{12} \\
++x_{21} & x_{22}
++\end{vmatrix}
++
++\begin{Vmatrix}
++x_{11} & x_{12} \\
++x_{21} & x_{22}
++\end{Vmatrix}
++
++\begin{smallmatrix}
++x_{11} & x_{12} \\
++x_{21} & x_{22}
++\end{smallmatrix}
++
++f(x|\lambda) =
++\begin{cases}
++\lambda e^{-\lambda x} & x \geq 0, \\
++0 & \text{otherwise}
++\end{cases}
++
++\begin{aligned}
++y_1 &= \beta_{11} + \beta_{12} x + \varepsilon_1 \\
++y_2 &= \alpha_{21} y_1 + \beta_{21} + \beta_{22} x + \varepsilon_2
++\end{aligned}
++
++\begin{gathered}
++y_1 = \beta_{11} + \beta_{12} x + \varepsilon_1 \\
++y_2 = \alpha_{21} y_1 + \beta_{21} + \beta_{22} x + \varepsilon_2
++\end{gathered}
++
++\begin{split}
++\mathop{E}\frac{\partial \ln L}{\partial \theta}
++  &=\mathop{E}\left[\frac{1}{L} \frac{\partial L}{\partial \theta}\right]\\
++  &=\int\left[\frac{1}{L} \frac{\partial L}{\partial \theta}\right] L\;dz\\
++  &=\int\frac{\partial L}{\partial \theta}\;dz
++\end{split}
++
++\begin{array}{clrc}
++  1 & 2 & 3 & 4 \\
++  5 & 6 & 7 & 8 \\
++  9 & 10& 11& 12
++\end{array}
++
++\begin{array}[t]{clrc}
++  1 & 2 & 3 & 4 \\
++  5 & 6 & 7 & 8 \\
++  9 & 10& 11& 12
++\end{array}
++$$
+diff --git a/extensions/mathparser/tests/unit/itex-environments.xml b/extensions/mathparser/tests/unit/itex-environments.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-environments.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- useless spaces generated by itex2MML between children have been removed --> 
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow><mrow><mo>(</mo><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow><mo>)</mo></mrow><mrow><mo>[</mo><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow><mo>]</mo></mrow><mrow><mo>{</mo><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow><mo>}</mo></mrow><mrow><mo>∣</mo><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow><mo>∣</mo></mrow><mrow><mo>∥</mo><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow><mo>∥</mo></mrow><mstyle scriptlevel="2"><mrow><mtable rowspacing="0.5ex"><mtr><mtd><msub><mi>x</mi><mn>11</mn></msub></mtd><mtd><msub><mi>x</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>21</mn></msub></mtd><mtd><msub><mi>x</mi><mn>22</mn></msub></mtd></mtr></mtable></mrow></mstyle><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">∣</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>=</mo><mrow><mo>{</mo><mrow><mtable columnalign="left left"><mtr><mtd><mi>λ</mi><msup><mi>e</mi><mrow><mo lspace="verythinmathspace" rspace="0em">−</mo><mi>λ</mi><mi>x</mi></mrow></msup></mtd><mtd><mi>x</mi><mo>≥</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mtext>otherwise</mtext></mtd></mtr></mtable></mrow></mrow><mrow><mtable columnalign="right left right left right left right left right left" columnspacing="0em"><mtr><mtd><msub><mi>y</mi><mn>1</mn></msub></mtd><mtd><mo>=</mo><msub><mi>β</mi><mn>11</mn></msub><mo>+</mo><msub><mi>β</mi><mn>12</mn></msub><mi>x</mi><mo>+</mo><msub><mi>ε</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>y</mi><mn>2</mn></msub></mtd><mtd><mo>=</mo><msub><mi>α</mi><mn>21</mn></msub><msub><mi>y</mi><mn>1</mn></msub><mo>+</mo><msub><mi>β</mi><mn>21</mn></msub><mo>+</mo><msub><mi>β</mi><mn>22</mn></msub><mi>x</mi><mo>+</mo><msub><mi>ε</mi><mn>2</mn></msub></mtd></mtr></mtable></mrow><mrow><mtable rowspacing="1.0ex"><mtr><mtd><msub><mi>y</mi><mn>1</mn></msub><mo>=</mo><msub><mi>β</mi><mn>11</mn></msub><mo>+</mo><msub><mi>β</mi><mn>12</mn></msub><mi>x</mi><mo>+</mo><msub><mi>ε</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>y</mi><mn>2</mn></msub><mo>=</mo><msub><mi>α</mi><mn>21</mn></msub><msub><mi>y</mi><mn>1</mn></msub><mo>+</mo><msub><mi>β</mi><mn>21</mn></msub><mo>+</mo><msub><mi>β</mi><mn>22</mn></msub><mi>x</mi><mo>+</mo><msub><mi>ε</mi><mn>2</mn></msub></mtd></mtr></mtable></mrow><mrow><mtable columnalign="right left right left right left right left right left" columnspacing="0em"><mtr><mtd><mo lspace="thinmathspace" rspace="thinmathspace">E</mo><mfrac><mrow><mo>∂</mo><mi>ln</mi><mi>L</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac></mtd><mtd><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">E</mo><mrow><mo>[</mo><mfrac><mn>1</mn><mi>L</mi></mfrac><mfrac><mrow><mo>∂</mo><mi>L</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>]</mo></mrow></mtd></mtr><mtr><mtd/><mtd><mo>=</mo><mo>∫</mo><mrow><mo>[</mo><mfrac><mn>1</mn><mi>L</mi></mfrac><mfrac><mrow><mo>∂</mo><mi>L</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mo>]</mo></mrow><mi>L</mi><mspace width="thickmathspace"/><mi>dz</mi></mtd></mtr><mtr><mtd/><mtd><mo>=</mo><mo>∫</mo><mfrac><mrow><mo>∂</mo><mi>L</mi></mrow><mrow><mo>∂</mo><mi>θ</mi></mrow></mfrac><mspace width="thickmathspace"/><mi>dz</mi></mtd></mtr></mtable></mrow><mtable rowspacing="0.5ex" columnalign="center left right center"><mtr><mtd><mn>1</mn></mtd><mtd><mn>2</mn></mtd><mtd><mn>3</mn></mtd><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd><mtd><mn>6</mn></mtd><mtd><mn>7</mn></mtd><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd><mtd><mn>10</mn></mtd><mtd><mn>11</mn></mtd><mtd><mn>12</mn></mtd></mtr></mtable><mtable rowspacing="0.5ex" align="axis 1" columnalign="center left right center"><mtr><mtd><mn>1</mn></mtd><mtd><mn>2</mn></mtd><mtd><mn>3</mn></mtd><mtd><mn>4</mn></mtd></mtr><mtr><mtd><mn>5</mn></mtd><mtd><mn>6</mn></mtd><mtd><mn>7</mn></mtd><mtd><mn>8</mn></mtd></mtr><mtr><mtd><mn>9</mn></mtd><mtd><mn>10</mn></mtd><mtd><mn>11</mn></mtd><mtd><mn>12</mn></mtd></mtr></mtable></math>
+diff --git a/extensions/mathparser/tests/unit/itex-fractions-scripts-roots.txt b/extensions/mathparser/tests/unit/itex-fractions-scripts-roots.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-fractions-scripts-roots.txt
+@@ -0,0 +1,23 @@
++$$
++\frac{x}{y}
++\tfrac{x}{y}
++\binom{x}{y}
++\tbinom{x}{y}
++{x \over y}
++{x \atop y}
++\substack{x}
++\overbrace{x}
++\underbrace{x}
++\underset{x}{y}
++\overset{x}{y} (=\stackrel{x}{y})
++\underoverset{x y z}{2}{m}
++\tensor{X}{_i_j^k^l}
++\multiscripts{^2_0_1}{X}{^j_i_k}
++\sqrt{x}
++\sqrt[n]{x}
++\root{n}{x}
++\operatorname{x}
++\mathop{x}
++\mathbin{x}
++\mathrel{x}
++$$
+diff --git a/extensions/mathparser/tests/unit/itex-fractions-scripts-roots.xml b/extensions/mathparser/tests/unit/itex-fractions-scripts-roots.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-fractions-scripts-roots.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- useless mrow's generated by itex2MML have been removed -->
++<!-- useless spaces generated by itex2MML between children have been removed --> 
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mfrac><mi>x</mi><mi>y</mi></mfrac><mstyle displaystyle="false"><mfrac><mi>x</mi><mi>y</mi></mfrac></mstyle><mrow><mo>(</mo><mfrac linethickness="0"><mi>x</mi><mi>y</mi></mfrac><mo>)</mo></mrow><mrow><mo>(</mo><mstyle displaystyle="false"><mfrac linethickness="0"><mi>x</mi><mi>y</mi></mfrac></mstyle><mo>)</mo></mrow><mfrac><mi>x</mi><mi>y</mi></mfrac><mfrac linethickness="0"><mi>x</mi><mi>y</mi></mfrac><mrow><mtable columnalign="center" rowspacing="0.5ex"><mtr><mtd><mi>x</mi></mtd></mtr></mtable></mrow><mover><mi>x</mi><mo>⏞</mo></mover><munder><mi>x</mi><mo>⏟</mo></munder><munder><mi>y</mi><mi>x</mi></munder><mover><mi>y</mi><mi>x</mi></mover><mo stretchy="false">(</mo><mo>=</mo><mover><mi>y</mi><mi>x</mi></mover><mo stretchy="false">)</mo><munderover><mi>m</mi><mrow><mi>x</mi><mi>y</mi><mi>z</mi></mrow><mn>2</mn></munderover><mmultiscripts><mi>X</mi><mi>i</mi><none/><mi>j</mi><mi>k</mi><none/><mi>l</mi></mmultiscripts><mmultiscripts><mi>X</mi><none/><mi>j</mi><mi>i</mi><none/><mi>k</mi><none/><mprescripts/><none/><mn>2</mn><mn>0</mn><none/><mn>1</mn><none/></mmultiscripts><msqrt><mi>x</mi></msqrt><mroot><mi>x</mi><mi>n</mi></mroot><mroot><mi>x</mi><mi>n</mi></mroot><mo lspace="0em" rspace="thinmathspace">x</mo><mo lspace="thinmathspace" rspace="thinmathspace">x</mo><mo lspace="mediummathspace" rspace="mediummathspace">x</mo><mo lspace="thickmathspace" rspace="thickmathspace">x</mo></math>
++
+diff --git a/extensions/mathparser/tests/unit/itex-greek.txt b/extensions/mathparser/tests/unit/itex-greek.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-greek.txt
+@@ -0,0 +1,58 @@
++$$
++\alpha
++\beta
++\gamma
++\delta
++\epsilon
++\backepsilon
++\varepsilon
++\zeta
++\eta
++\theta
++\vartheta
++\iota
++\kappa
++\varkappa
++\lambda
++\mu
++\nu
++\xi
++\omicron
++\pi
++\varpi
++\rho
++\varrho
++\sigma
++\varsigma
++\tau
++\upsilon
++\phi
++\varphi
++\chi
++\psi
++\omega
++\Alpha
++\Beta
++\Gamma
++\Delta
++\Zeta
++\Eta
++\Theta
++\Iota
++\Kappa
++\Lambda
++\Mu
++\Nu
++\Xi
++\Pi
++\Rho
++\Sigma
++\Tau
++\Upsilon \Upsi
++\Phi
++\Psi
++\Omega
++\digamma
++\mho
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-greek.xml b/extensions/mathparser/tests/unit/itex-greek.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-greek.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<math xmlns='http://www.w3.org/1998/Math/MathML' display='block'><mi>α</mi><mi>β</mi><mi>γ</mi><mi>δ</mi><mi>ϵ</mi><mi>϶</mi><mi>ε</mi><mi>ζ</mi><mi>η</mi><mi>θ</mi><mi>ϑ</mi><mi>ι</mi><mi>κ</mi><mi>ϰ</mi><mi>λ</mi><mi>μ</mi><mi>ν</mi><mi>ξ</mi><mi>ℴ</mi><mi>π</mi><mi>ϖ</mi><mi>ρ</mi><mi>ϱ</mi><mi>σ</mi><mi>ς</mi><mi>τ</mi><mi>υ</mi><mi>ϕ</mi><mi>φ</mi><mi>χ</mi><mi>ψ</mi><mi>ω</mi><mi>Α</mi><mi>Β</mi><mi>Γ</mi><mi>Δ</mi><mi>Ζ</mi><mi>Η</mi><mi>Θ</mi><mi>Ι</mi><mi>Κ</mi><mi>Λ</mi><mi>Μ</mi><mi>Ν</mi><mi>Ξ</mi><mi>Π</mi><mi>Ρ</mi><mi>Σ</mi><mi>Τ</mi><mi>ϒ</mi><mi>ϒ</mi><mi>Φ</mi><mi>Ψ</mi><mi>Ω</mi><mi>ϝ</mi><mi>℧</mi></math>
++
+diff --git a/extensions/mathparser/tests/unit/itex-log-like.txt b/extensions/mathparser/tests/unit/itex-log-like.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-log-like.txt
+@@ -0,0 +1,37 @@
++$$
++\arccos{x}
++\arcsin{x}
++\arctan{x}
++\arg{x}
++\cos{x}
++\cosh{x}
++\cot{x}
++\coth{x}
++\csc{x}
++\deg{x}
++\det{x}
++\dim{x}
++\exp{x}
++\gcd{x}
++\inf{x}
++\hom{x}
++\ker{x}
++\lg{x}
++\lim{x}
++\liminf{x}
++\limsup{x}
++\ln{x}
++\log{x}
++\max{x}
++\min{x}
++x \mod{m}
++x \pmod{m}
++\Pr{x}
++\sec{x}
++\sin{x}
++\sinh{x}
++\sup{x}
++\tan{x}
++\tanh{x}
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-log-like.xml b/extensions/mathparser/tests/unit/itex-log-like.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-log-like.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- An mrow has been added for "x \pmod{m}" -->
++<math xmlns='http://www.w3.org/1998/Math/MathML' display='block'><mi>arccos</mi><mi>x</mi><mi>arcsin</mi><mi>x</mi><mi>arctan</mi><mi>x</mi><mi>arg</mi><mi>x</mi><mi>cos</mi><mi>x</mi><mi>cosh</mi><mi>x</mi><mi>cot</mi><mi>x</mi><mi>coth</mi><mi>x</mi><mi>csc</mi><mi>x</mi><mi>deg</mi><mi>x</mi><mi>det</mi><mi>x</mi><mi>dim</mi><mi>x</mi><mi>exp</mi><mi>x</mi><mi>gcd</mi><mi>x</mi><mi>inf</mi><mi>x</mi><mi>hom</mi><mi>x</mi><mi>ker</mi><mi>x</mi><mi>lg</mi><mi>x</mi><mi>lim</mi><mi>x</mi><mi>liminf</mi><mi>x</mi><mi>limsup</mi><mi>x</mi><mi>ln</mi><mi>x</mi><mi>log</mi><mi>x</mi><mi>max</mi><mi>x</mi><mi>min</mi><mi>x</mi><mi>x</mi><mo lspace="mediummathspace" rspace="mediummathspace">mod</mo><mi>m</mi><mi>x</mi><mrow><mo lspace="mediummathspace">(</mo><mo rspace="thinmathspace">mod</mo><mi>m</mi><mo rspace="mediummathspace">)</mo></mrow><mi>Pr</mi><mi>x</mi><mi>sec</mi><mi>x</mi><mi>sin</mi><mi>x</mi><mi>sinh</mi><mi>x</mi><mi>sup</mi><mi>x</mi><mi>tan</mi><mi>x</mi><mi>tanh</mi><mi>x</mi></math>
+diff --git a/extensions/mathparser/tests/unit/itex-operators.txt b/extensions/mathparser/tests/unit/itex-operators.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-operators.txt
+@@ -0,0 +1,265 @@
++$$
++\amalg
++\angle
++\measuredangle
++\sphericalangle
++\approx
++\approxeq
++\thickapprox
++\ast
++\asymp
++\backslash
++\because
++\between
++\bottom (= \bot)
++\boxminus ( = \minusb)
++\boxplus ( = \plusb)
++\boxtimes ( = \timesb)
++\boxdot
++\bowtie
++\bullet
++\cap ( = \intersection)
++\cup ( = \union)
++\Cap
++\Cup
++\cdot
++\circledast
++\circledcirc
++\clubsuit
++\curlyvee
++\curlywedge
++\diamondsuit
++\divideontimes
++\dotplus
++\heartsuit
++\spadesuit
++\circ
++\bigcirc
++\cong
++\ncong
++\dagger
++\ddagger
++\dashv
++\Vdash
++\vDash
++\nvDash
++\VDash
++\nVDash
++\vdash
++\nvdash
++\Vvdash
++\Diamond
++\diamond
++\div
++\equiv
++\nequiv
++\eqcirc
++\neq ( = \ne)
++\Bumpeq
++\bumpeq
++\circeq
++\doteq
++\doteqdot
++\fallingdotseq
++\risingdotseq
++\exists
++\nexists
++\flat
++\forall
++\frown
++\smallfrown
++\gt
++\ngtr
++\gg
++\ggg
++\geq ( = \ge)
++\ngeq
++\geqq
++\ngeqq
++\geqslant
++\ngeqslant
++\eqslantgtr
++\gneq
++\gneqq
++\gnapprox
++\gnsim
++\gtrapprox
++\gtrsim
++\gtrdot
++\gtreqless
++\gtreqqless
++\gtrless
++\gvertneqq
++\in
++\notin
++\ni
++\notni
++\intercal
++\invamp ( = \parr)
++\lhd
++\unlhd
++\leftthreetimes
++\rightthreetimes
++\lt
++\nless
++\ll
++\lll
++\leq ( = \le)
++\nleq
++\leqq
++\nleqq
++\leqslant
++\nleqslant
++\eqslantless
++\lessapprox
++\lessdot
++\lesseqgtr
++\lesseqqgtr
++\lessgtr
++\lesssim
++\lnapprox
++\lneq
++\lneqq
++\lnsim
++\ltimes
++\lvertneqq
++\lozenge
++\blacklozenge
++\mid ( = \shortmid)
++\nmid
++\nshortmid
++\models
++\multimap
++\nabla ( = \Del)
++\natural
++\not ( = \neg)
++\odot
++\odash ( = \circleddash)
++\otimes
++\oplus
++\ominus
++\oslash
++\parallel
++\nparallel
++\shortparallel
++\nshortparallel
++\partial
++\Perp ( = \Vbar)
++\perp
++\pitchfork
++\pm
++\mp
++\prec
++\nprec
++\precapprox
++\precnapprox
++\preceq
++\npreceq
++\preccurlyeq
++\curlyeqprec
++\precsim
++\precnsim
++\prime
++\backprime
++\propto
++\varpropto
++\rhd
++\unrhd
++\rtimes
++\setminus
++\smallsetminus
++\sharp
++\sim
++\nsim
++\backsim
++\simeq
++\backsimeq
++\thicksim
++\smile
++\smallsmile
++\sslash
++\subset
++\nsubset
++\subseteq
++\nsubseteq
++\subseteqq
++\nsubseteqq
++\subsetneq
++\subsetneqq
++\varsubsetneq
++\varsubsetneqq
++\Subset
++\succ
++\nsucc
++\succeq
++\nsucceq
++\succapprox
++\succnapprox
++\succcurlyeq
++\curlyeqsucc
++\succsim
++\succnsim
++\supset
++\nsupset
++\supseteq
++\nsupseteq
++\supseteqq
++\supsetneq
++\supsetneqq
++\varsupsetneq
++\varsupsetneqq
++\Supset
++\square ( = \Box)
++\blacksquare (= \qed)
++\sqcup
++\sqcap
++\sqsubset
++\sqsubseteq
++\sqsupset
++\sqsupseteq
++\star
++\bigstar
++\therefore
++\times
++\top
++\triangle
++\triangledown
++\triangleleft
++\triangleright
++\blacktriangle
++\blacktriangledown
++\bigtriangleup
++\bigtriangledown
++\blacktriangleleft
++\blacktriangleright
++\ntriangleleft
++\ntriangleright
++\ntrianglelefteq
++\ntrianglerighteq
++\trianglelefteq
++\trianglerighteq
++\triangleq
++\vartriangleleft
++\vartriangleright
++\uplus
++\vee
++\veebar
++\wedge
++\barwedge
++\doublebarwedge
++\wr
++\coloneqq
++\Coloneqq
++\coloneq
++\Coloneq
++\eqqcolon
++\Eqqcolon
++\eqcolon
++\Eqcolon
++\colonapprox
++\Colonapprox
++\colonsim
++\Colonsim
++\dblcolon
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-operators.xml b/extensions/mathparser/tests/unit/itex-operators.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-operators.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mo>⨿</mo><mo>∠</mo><mo>∡</mo><mo>∢</mo><mo>≈</mo><mo>≊</mo><mo>≈</mo><mo>*</mo><mo>≈</mo><mo>\</mo><mo>∵</mo><mo>≬</mo><mo>⊥</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⊥</mo><mo stretchy="false">)</mo><mo>⊟</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⊟</mo><mo stretchy="false">)</mo><mo>⊞</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⊞</mo><mo stretchy="false">)</mo><mo>⊠</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⊠</mo><mo stretchy="false">)</mo><mo>⊡</mo><mo>⋈</mo><mo>•</mo><mo>∩</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∩</mo><mo stretchy="false">)</mo><mo>∪</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∪</mo><mo stretchy="false">)</mo><mo>⋒</mo><mo>⋓</mo><mo>⋅</mo><mo>⊛</mo><mo>⊚</mo><mo>♣</mo><mo>⋎</mo><mo>⋏</mo><mo>♢</mo><mo>⋇</mo><mo>∔</mo><mo>♡</mo><mo>♠</mo><mo>∘</mo><mo>◯</mo><mo>≅</mo><mo>≇</mo><mo>†</mo><mo>‡</mo><mo>⊣</mo><mo>⊩</mo><mo>⊨</mo><mo>⊭</mo><mo>⊫</mo><mo>⊯</mo><mo>⊢</mo><mo>⊬</mo><mo>⊪</mo><mo>⋄</mo><mo>⋄</mo><mo>÷</mo><mo>≡</mo><mo>≢</mo><mo>≖</mo><mo>≠</mo><mo stretchy="false">(</mo><mo>=</mo><mo>≠</mo><mo stretchy="false">)</mo><mo>≎</mo><mo>≏</mo><mo>≗</mo><mo>≐</mo><mo>≑</mo><mo>≒</mo><mo>≓</mo><mo>∃</mo><mo>∄</mo><mo>♭</mo><mo>∀</mo><mo>⌢</mo><mo>⌢</mo><mo>&gt;</mo><mo>≯</mo><mo>≫</mo><mo>⋙</mo><mo>≥</mo><mo stretchy="false">(</mo><mo>=</mo><mo>≥</mo><mo stretchy="false">)</mo><mo>≱</mo><mo>≧</mo><mo>≧̸</mo><mo>⩾</mo><mo>⩾̸</mo><mo>⪖</mo><mo>⪈</mo><mo>≩</mo><mo>⪊</mo><mo>⋧</mo><mo>⪆</mo><mo>≳</mo><mo>⋗</mo><mo>⋛</mo><mo>⪌</mo><mo>≷</mo><mo>≩︀</mo><mo>∈</mo><mo>∉</mo><mo>∋</mo><mo>∌</mo><mo>⊺</mo><mo>⅋</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⅋</mo><mo stretchy="false">)</mo><mo>⊲</mo><mo>⊴</mo><mo>⋋</mo><mo>⋌</mo><mo>&lt;</mo><mo>≮</mo><mo>≪</mo><mo>⋘</mo><mo>≤</mo><mo stretchy="false">(</mo><mo>=</mo><mo>≤</mo><mo stretchy="false">)</mo><mo>≰</mo><mo>≦</mo><mo>≦̸</mo><mo>⩽</mo><mo>⩽̸</mo><mo>⪕</mo><mo>⪅</mo><mo>⋖</mo><mo>⋚</mo><mo>⪋</mo><mo>≶</mo><mo>≲</mo><mo>⪉</mo><mo>⪇</mo><mo>≨</mo><mo>⋦</mo><mo>⋉</mo><mo>≨︀</mo><mo>◊</mo><mo>⧫</mo><mo lspace="mediummathspace" rspace="mediummathspace">∣</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="mediummathspace" rspace="mediummathspace">∣</mo><mo stretchy="false">)</mo><mo>∤</mo><mo>∤</mo><mo>⊧</mo><mo>⊸</mo><mo>∇</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∇</mo><mo stretchy="false">)</mo><mo>♮</mo><mo>¬</mo><mo stretchy="false">(</mo><mo>=</mo><mo>¬</mo><mo stretchy="false">)</mo><mo>⊙</mo><mo>⊝</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⊝</mo><mo stretchy="false">)</mo><mo>⊗</mo><mo>⊕</mo><mo>⊖</mo><mo>⊘</mo><mo>∥</mo><mo>∦</mo><mo>∥</mo><mo>∦</mo><mo>∂</mo><mo>⫫</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⫫</mo><mo stretchy="false">)</mo><mo>⊥</mo><mo>⋔</mo><mo>±</mo><mo>∓</mo><mo>≺</mo><mo>⊀</mo><mo>⪷</mo><mo>⪹</mo><mo>⪯</mo><mo>⪯̸</mo><mo>≼</mo><mo>⋞</mo><mo>≾</mo><mo>⋨</mo><mstyle scriptlevel="0"><mo>′</mo></mstyle><mo>‵</mo><mo>∝</mo><mo>∝</mo><mo>⊳</mo><mo>⊵</mo><mo>⋊</mo><mo>∖</mo><mo stretchy="false">﹨</mo><mo>♯</mo><mo>∼</mo><mo>≁</mo><mo>∽</mo><mo>≃</mo><mo>⋍</mo><mo>∼</mo><mo>⌣</mo><mo>⌣</mo><mo>⫽</mo><mo>⊂</mo><mo>⊂⃒</mo><mo>⊆</mo><mo>⊈</mo><mo>⫅</mo><mo>⫅̸</mo><mo>⊊</mo><mo>⫋</mo><mo>⊊︀</mo><mo>⫋︀</mo><mo>⋐</mo><mo>≻</mo><mo>⊁</mo><mo>⪰</mo><mo>⪰̸</mo><mo>⪸</mo><mo>⪺</mo><mo>≽</mo><mo>⋟</mo><mo>≿</mo><mo>⋩</mo><mo>⊃</mo><mo>⊃⃒</mo><mo>⊇</mo><mo>⊉</mo><mo>⫆</mo><mo>⊋</mo><mo>⫌</mo><mo>⊋︀</mo><mo>⫌︀</mo><mo>⋑</mo><mo>□</mo><mo stretchy="false">(</mo><mo>=</mo><mo>□</mo><mo stretchy="false">)</mo><mo>▪</mo><mo stretchy="false">(</mo><mo>=</mo><mo>▪</mo><mo stretchy="false">)</mo><mo>⊔</mo><mo>⊓</mo><mo>⊏</mo><mo>⊑</mo><mo>⊐</mo><mo>⊒</mo><mo>⋆</mo><mo>★</mo><mo>∴</mo><mo>×</mo><mo>⊤</mo><mo>▵</mo><mo>▿</mo><mo>◃</mo><mo>▹</mo><mo>▴</mo><mo>▾</mo><mo>△</mo><mo>▽</mo><mo>◂</mo><mo>▸</mo><mo>⋪</mo><mo>⋫</mo><mo>⋬</mo><mo>⋭</mo><mo>⊴</mo><mo>⊵</mo><mo>≜</mo><mo>⊲</mo><mo>⊳</mo><mo>⊎</mo><mo>∨</mo><mo>⊻</mo><mo>∧</mo><mo>⌅</mo><mo>⌆</mo><mo>≀</mo><mo>≔</mo><mo lspace="mediummathspace" rspace="mediummathspace">⩴</mo><mo lspace="mediummathspace" rspace="mediummathspace">∶−</mo><mo lspace="mediummathspace" rspace="mediummathspace">∷−</mo><mo lspace="mediummathspace" rspace="mediummathspace">≕</mo><mo lspace="mediummathspace" rspace="mediummathspace">=∷</mo><mo lspace="mediummathspace" rspace="mediummathspace">∹</mo><mo lspace="mediummathspace" rspace="mediummathspace">−∷</mo><mo lspace="mediummathspace" rspace="mediummathspace">∶≈</mo><mo lspace="mediummathspace" rspace="mediummathspace">∷≈</mo><mo lspace="mediummathspace" rspace="mediummathspace">∶∼</mo><mo lspace="mediummathspace" rspace="mediummathspace">∷∼</mo><mo>∷</mo></math>
++
+diff --git a/extensions/mathparser/tests/unit/itex-sizes-styles.txt b/extensions/mathparser/tests/unit/itex-sizes-styles.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-sizes-styles.txt
+@@ -0,0 +1,18 @@
++$$
++\displaystyle{\prod}
++\textstyle{\prod}
++\textsize{\prod}
++\scriptsize{\prod}
++\scriptscriptsize{\prod}
++\mathit{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
++\mathbf{ABCDEFGHIJKLMNOPQRSTUVWXYZ} (\boldsymbol{ABCDEFGHIJKLMNOPQRSTUVWXYZ})
++\mathrm{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
++\mathbb{ABCDEFGHIJKLMNOPQRSTUVWXYZ}
++\mathbb{abcdefghijklmnopqrstuvwxyz}
++\mathfrak{ABCDEFGHIJKLMNOPQRSTUVWXYZ} (\mathfr{ABCDEFGHIJKLMNOPQRSTUVWXYZ})
++\mathfrak{abcdefghijklmnopqrstuvwxyz}
++\mathcal{ABCDEFGHIJKLMNOPQRSTUVWXYZ}
++\mathcal{abcdefghijklmnopqrstuvwxyz}
++\text{abcdefghijklmnopqrstuvwxyz}
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-sizes-styles.xml b/extensions/mathparser/tests/unit/itex-sizes-styles.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-sizes-styles.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo></mstyle><mstyle displaystyle="false"><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo></mstyle><mstyle scriptlevel="0"><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo></mstyle><mstyle scriptlevel="1"><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo></mstyle><mstyle scriptlevel="2"><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo></mstyle><mstyle mathvariant="italic"><mrow><mi>A</mi><mi>B</mi><mi>C</mi><mi>D</mi><mi>E</mi><mi>F</mi><mi>G</mi><mi>H</mi><mi>I</mi><mi>J</mi><mi>K</mi><mi>L</mi><mi>M</mi><mi>N</mi><mi>O</mi><mi>P</mi><mi>Q</mi><mi>R</mi><mi>S</mi><mi>T</mi><mi>U</mi><mi>V</mi><mi>W</mi><mi>X</mi><mi>Y</mi><mi>Z</mi></mrow></mstyle><mstyle mathvariant="bold"><mi>ABCDEFGHIJKLMNOPQRSTUVWXYZ</mi></mstyle><mo stretchy="false">(</mo><mstyle mathvariant="bold"><mi>ABCDEFGHIJKLMNOPQRSTUVWXYZ</mi></mstyle><mo stretchy="false">)</mo><mi mathvariant="normal">ABCDEFGHIJKLMNOPQRSTUVWXYZ</mi><mi>𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ</mi><mi>𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫</mi><mi>𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ</mi><mo stretchy="false">(</mo><mi>𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ</mi><mo stretchy="false">)</mo><mi>𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷</mi><mi>𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵</mi><mi>𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏</mi><mtext>abcdefghijklmnopqrstuvwxyz</mtext></math>
+diff --git a/extensions/mathparser/tests/unit/itex-symbols-dots-largeops.txt b/extensions/mathparser/tests/unit/itex-symbols-dots-largeops.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-symbols-dots-largeops.txt
+@@ -0,0 +1,41 @@
++$$
++\aleph
++\beth
++\ell
++\hbar
++\Im
++\imath
++\jmath
++\eth
++\Re
++\wp
++\infty ( = \infinity)
++\emptyset ( = \varnothing)
++
++\dots
++\ldots
++\cdots
++\ddots
++\udots
++\vdots
++\colon
++
++\bigcup ( = \Union)
++\bigcap ( = \Intersection)
++\bigodot
++\bigoplus ( = \Oplus)
++\bigotimes ( = \Otimes)
++\bigsqcup
++\biguplus
++\bigwedge ( = \Wedge)
++\bigvee ( = \Vee)
++\coprod ( = \coproduct)
++\prod ( = \product)
++\sum
++\int ( = \integral)
++\iint ( = \doubleintegral)
++\iiint ( = \tripleintegral)
++\iiiint ( = \quadrupleintegral)
++\oint ( = \conint = \contourintegral)
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-symbols-dots-largeops.xml b/extensions/mathparser/tests/unit/itex-symbols-dots-largeops.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-symbols-dots-largeops.xml
+@@ -0,0 +1,3 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>ℵ</mi><mi>ℶ</mi><mi>ℓ</mi><mi>ℏ</mi><mi>ℑ</mi><mi>𝚤</mi><mi>𝚥</mi><mi>ð</mi><mi>ℜ</mi><mi>℘</mi><mn>∞</mn><mo stretchy="false">(</mo><mo>=</mo><mn>∞</mn><mo stretchy="false">)</mo><mi>∅</mi><mo stretchy="false">(</mo><mo>=</mo><mo>∅</mo><mo stretchy="false">)</mo><mi>…</mi><mi>…</mi><mi>⋯</mi><mi>⋱</mi><mi>⋰</mi><mi>⋮</mi><mo lspace="verythinmathspace">:</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋃</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋃</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋂</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋂</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">⨀</mo><mo lspace="thinmathspace" rspace="thinmathspace">⨁</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">⨁</mo><mo stretchy="false">)</mo><mo>⨂</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⨷</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">⨆</mo><mo lspace="thinmathspace" rspace="thinmathspace">⨄</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋀</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋀</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋁</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">⋁</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">∐</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">∐</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo><mo stretchy="false">(</mo><mo>=</mo><mo lspace="thinmathspace" rspace="thinmathspace">∏</mo><mo stretchy="false">)</mo><mo lspace="thinmathspace" rspace="thinmathspace">∑</mo><mo>∫</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∫</mo><mo stretchy="false">)</mo><mo>∬</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∬</mo><mo stretchy="false">)</mo><mo>∭</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∭</mo><mo stretchy="false">)</mo><mo>⨌</mo><mo stretchy="false">(</mo><mo>=</mo><mo>⨌</mo><mo stretchy="false">)</mo><mo>∮</mo><mo stretchy="false">(</mo><mo>=</mo><mo>∮</mo><mo>=</mo><mo>∮</mo><mo stretchy="false">)</mo></math>
++
+diff --git a/extensions/mathparser/tests/unit/itex-xarrows-spaces-colours-interactivity.txt b/extensions/mathparser/tests/unit/itex-xarrows-spaces-colours-interactivity.txt
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-xarrows-spaces-colours-interactivity.txt
+@@ -0,0 +1,34 @@
++$$
++\xrightarrow[d]{u}
++\xleftarrow[d]{u}
++\xleftrightarrow[d]{u}
++\xLeftarrow[d]{u}
++\xRightarrow[d]{u}
++\xLeftrightarrow[d]{u}
++\xleftrightharpoons[d]{u}
++\xrightleftharpoons[d]{u}
++\xhookleftarrow[d]{u}
++\xhookrightarrow[d]{u}
++\xmapsto[d]{u}
++
++\, ( = \thinspace)
++\: ( = \medspace)
++\; ( = \thickspace)
++\quad
++\qquad
++\! ( = \negspace)
++\phantom
++\mathrlap
++\mathllap
++\mathclap
++\space{5}{0}{20}
++
++{\color{red} red}
++{\bgcolor{blue} blue}
++
++\href{url}{expression}
++\statusline{message}{expression}
++\tooltip{message}{expression}
++\toggle{expression1}{expression2}
++$$
++
+diff --git a/extensions/mathparser/tests/unit/itex-xarrows-spaces-colours-interactivity.xml b/extensions/mathparser/tests/unit/itex-xarrows-spaces-colours-interactivity.xml
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/itex-xarrows-spaces-colours-interactivity.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- useless mrow's generated by itex2MML have been removed -->
++<!-- a space generated by itex2MML between \toggle's children has been removed --> 
++<!-- The MathML3 syntax is used for \href -->
++<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><munderover><mo>→</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>←</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>↔</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>⇐</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>⇒</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>⇔</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>⇋</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>⇌</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>↩</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>↪</mo><mi>d</mi><mi>u</mi></munderover><munderover><mo>↦</mo><mi>d</mi><mi>u</mi></munderover><mspace width="thinmathspace"/><mo stretchy="false">(</mo><mo>=</mo><mspace width="thinmathspace"/><mo stretchy="false">)</mo><mspace width="mediummathspace"/><mo stretchy="false">(</mo><mo>=</mo><mspace width="mediummathspace"/><mo stretchy="false">)</mo><mspace width="thickmathspace"/><mo stretchy="false">(</mo><mo>=</mo><mspace width="thickmathspace"/><mo stretchy="false">)</mo><mspace width="1em"/><mspace width="2em"/><mspace width="-0.1667 em"/><mo stretchy="false">(</mo><mo>=</mo><mspace width="-0.1667 em"/><mo stretchy="false">)</mo><mphantom><mpadded width="0"><mpadded width="0" lspace="-100%width"><mpadded width="0" lspace="-50%width"><mspace height=".5ex" depth=".0ex" width="2.0em"/></mpadded></mpadded></mpadded></mphantom><mstyle mathcolor="red"><mi>red</mi></mstyle><mstyle mathbackground="blue"><mi>blue</mi></mstyle><mi href="url">expression</mi><maction actiontype="statusline"><mi>expression</mi><mtext>message</mtext></maction><maction actiontype="tooltip"><mi>expression</mi><mtext>message</mtext></maction><maction actiontype="toggle" selection="2"><mrow><mi>expression</mi><mn>1</mn></mrow><mrow><mi>expression</mi><mn>2</mn></mrow></maction></math>
++
+diff --git a/extensions/mathparser/tests/unit/test_mathparser.js b/extensions/mathparser/tests/unit/test_mathparser.js
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/test_mathparser.js
+@@ -0,0 +1,58 @@
++/* -*- Mode: Java; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
++/* vim: set ts=2 et sw=2 tw=80: */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project.
++ *
++ * The Initial Developer of the Original Code is
++ * Frederic Wang <fred.wang@free.fr>.
++ * Portions created by the Initial Developer are Copyright (C) 2010
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++function run_test() {
++  mathparserCompare("itex-arrows.xml", "itex-arrows.txt", kModeItex);
++  mathparserCompare("itex-greek.xml", "itex-greek.txt", kModeItex);
++  mathparserCompare("itex-log-like.xml", "itex-log-like.txt", kModeItex);
++  mathparserCompare("itex-operators.xml", "itex-operators.txt", kModeItex);
++  mathparserCompare("itex-symbols-dots-largeops.xml",
++                    "itex-symbols-dots-largeops.txt", kModeItex);
++  mathparserCompare("itex-xarrows-spaces-colours-interactivity.xml",
++                    "itex-xarrows-spaces-colours-interactivity.txt", kModeItex);
++  mathparserCompare("itex-delimiters-accents.xml",
++                    "itex-delimiters-accents.txt", kModeItex);
++  mathparserCompare("itex-fractions-scripts-roots.xml",
++                    "itex-fractions-scripts-roots.txt", kModeItex);
++  mathparserCompare("itex-sizes-styles.xml",
++                    "itex-sizes-styles.txt", kModeItex);
++  mathparserCompare("itex-environments.xml",
++                    "itex-environments.txt", kModeItex);
++  mathparserCompare("itex-arrays.xml",
++                    "itex-arrays.txt", kModeItex);
++}

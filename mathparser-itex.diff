@@ -1,0 +1,3088 @@
+# HG changeset patch
+# User Frédéric Wang <fred.wang@free.fr>
+# Parent 0439b135bd86c050688892aabe404c5ec3a95e35
+# Add itex mode to mathparser
+
+diff --git a/extensions/mathparser/src/Makefile.in b/extensions/mathparser/src/Makefile.in
+--- a/extensions/mathparser/src/Makefile.in
++++ b/extensions/mathparser/src/Makefile.in
+@@ -48,16 +48,17 @@ XPI_NAME = mathparser
+ MODULE           = mathparser
+ LIBRARY_NAME     = mathparser
+ SHORT_LIBNAME    = mathpars
+ IS_COMPONENT 	 = 1
+ MODULE_NAME      = nsMathParser
+ 
+ CPPSRCS += \
+   nsSimpleParser.tab.cpp \
++  nsItexParser.tab.cpp \
+   nsMathParser.cpp \
+   nsMathParserModule.cpp \
+   nsMathMLOperatorDictionary.cpp \
+   $(NULL)
+ 
+ EXTRA_DSO_LDOPTS = \
+   $(DIST)/lib/$(LIB_PREFIX)xpcomglue_s.$(LIB_SUFFIX) \
+   $(XPCOM_FROZEN_LDOPTS) \
+@@ -69,8 +70,11 @@ ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
+     $(TK_LIBS) \
+     $(NULL)
+ endif 
+ 
+ include $(topsrcdir)/config/rules.mk
+ 
+ nsSimpleParser.tab.cpp: nsSimpleParser.ypp
+ 	$(BISON) $<
++
++nsItexParser.tab.cpp: nsItexParser.ypp
++	$(BISON) $<
+diff --git a/extensions/mathparser/src/nsItexParser.ypp b/extensions/mathparser/src/nsItexParser.ypp
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/src/nsItexParser.ypp
+@@ -0,0 +1,1500 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
++/* ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Mozilla MathML Project
++ *
++ * The Initial Developer of the Original Code is
++ * Paul Gartside <gartside@math.pitt.edu> (itex2MML's initial developer).
++ * Portions created by the Initial Developer are Copyright (C) 2000-2010
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *   Jacques Distler <distler@golem.ph.utexas.edu> (itex2MML's maintainer)
++ *   Frederic Wang <fred.wang@free.fr>
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * either the GNU General Public License Version 2 or later (the "GPL"), or
++ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
++ * in which case the provisions of the GPL or the LGPL are applicable instead
++ * of those above. If you wish to allow use of your version of this file only
++ * under the terms of either the GPL or the LGPL, and not to allow others to
++ * use your version of this file under the terms of the MPL, indicate your
++ * decision by deleting the provisions above and replace them with the notice
++ * and other provisions required by the GPL or the LGPL. If you do not delete
++ * the provisions above, a recipient may use your version of this file under
++ * the terms of any one of the MPL, the GPL or the LGPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++// Note: This file is based on itex2MML.y
++
++%code requires {
++#include "nsMathParser.h"
++#include "nsMathMLNames.h"
++}
++%skeleton "lalr1.cc"
++%defines
++%define parser_class_name "nsItexParser"
++%parse-param { nsMathParser&   aMathParser }
++%parse-param { nsIDOMElement*& aResult     }
++%lex-param   { nsMathParser&   aMathParser }
++
++%union {
++  nsTArray<nsIDOMElement*>* elList;
++  nsTArray<nsIDOMAttr*>*    attrList;
++  nsIDOMElement*            el;
++  nsIDOMAttr*               attr;
++  nsString*                 str;
++  void*                     empty;
++}
++
++%{ 
++#define yylex(aValue, aMathParser) \
++  aMathParser.ItexGetNextToken((nsMathParser::nsItexParserSemanticType*) \
++                               aValue)
++
++void
++yy::nsItexParser::error (const yy::nsItexParser::location_type& l,
++                         const std::string& m)
++{
++  aMathParser.SendSyntaxErrorToConsole();
++}
++
++static void ItexSetSize(const nsAString& aString, nsIDOMElement*& aResult)
++{
++  aResult->SetAttribute(kAttributeMaxsize, aString);
++  aResult->SetAttribute(kAttributeMinsize, aString);
++}
++
++%}
++
++%token<empty> END 0
++%left<empty>  TEXOVER TEXATOP
++%token<empty> STARTMATH STARTDMATH ENDMATH
++%token<empty> SUP SUB MROWOPEN MROWCLOSE LEFT RIGHT BIG BBIG BIGG BBIGG BIGL
++%token<empty> BBIGL BIGGL BBIGGL FRAC TFRAC OPERATORNAME MATHOP MATHBIN MATHREL
++%token<empty> SQRT ROOT BINOM UNDER OVER OVERBRACE UNDERLINE UNDERBRACE
++%token<empty> UNDEROVER TENSOR MULTI ARRAY COLSEP ROWSEP ARRAYOPTS COLLAYOUT
++%token<empty> COLALIGN ROWALIGN ALIGN EQROWS EQCOLS ROWLINES COLLINES FRAME
++%token<empty> PADDING ITALICS BOLD BOXED SLASHED RM BB ST ENDST CAL FRAK CLAP
++%token<empty> LLAP RLAP ROWOPTS TEXTSIZE SCSIZE SCSCSIZE DISPLAY
++%token<empty> TEXTSTY TEXTBOX CELLOPTS ROWSPAN COLSPAN THINSPACE MEDSPACE
++%token<empty> THICKSPACE QUAD QQUAD NEGSPACE PHANTOM HREF EMPTYMROW
++%token<empty> STATLINE TOOLTIP TOGGLE SPACE BAR WIDEBAR VEC WIDEVEC HAT WIDEHAT
++%token<empty> CHECK WIDECHECK TILDE WIDETILDE DOT DDOT DDDOT DDDDOT 
++%token<empty> BEGINENV ENDENV MATRIX PMATRIX BMATRIX BBMATRIX VMATRIX
++%token<empty> VVMATRIX SMALLMATRIX CASES ALIGNED GATHERED SUBSTACK PMOD COLOR
++%token<empty> BGCOLOR BRACKETOPEN BRACKETCLOSE TBINOM
++%token<el>    MI MIB MN MO MOS MOB MOP MOL MOLL MOF MOR MTEXT
++%token<el>    UNARYMINUS UNARYPLUS
++%token<el>    PERIODDELIM OTHERDELIM LEFTDELIM RIGHTDELIM XARROW
++%token<str>   TEXTSTRING ATTRLIST INTONE INTTWO INTTHREE COLUMNALIGN
++%token<str>   ARRAYALIGN
++%type<empty>    result
++%type<el>       expression compoundTerm closedTerm left right bigdelim
++%type<el>       unaryminus unaryplus mi mib mn mob mo mtext
++%type<el>       emptymrow space statusline tooltip toggle mathrlap
++%type<el>       mathllap mathclap textstring displaystyle textstyle
++%type<el>       textsize scriptsize scriptscriptsize italics slashed boxed
++%type<el>       bold roman bbold frak cal thinspace medspace thickspace
++%type<el>       quad qquad negspace phantom href tensor multi mfrac
++%type<el>       substack array tableRow tableCell texover texatop binom
++%type<el>       pmod msqrt mroot munder mover munderover bar vec hat dot
++%type<el>       ddot dddot ddddot tilde check munderbrace moverbrace
++%type<el>       munderline mathenv color optsTableRow
++%type<el>       rightdelim leftdelim
++%type<elList>   compoundTermList subsupList subsupTerm
++%type<elList>   tableRowList simpleTableRow
++%type<attr>     acellopt align anarrayopt arowopt
++%type<attr>     colalign collayout collines colspan
++%type<attr>     eqcols eqrows frame rowalign rowlines rowspan
++%type<attrList> arrayopts cellopts padding rowopts
++%type<str>      columnAlignList
++
++%start result
++
++%destructor {
++  delete $$;
++} <str>
++
++%destructor {
++  $$->Release();
++} <el> <attr>
++
++%destructor {
++  aMathParser.DeleteArrayOfElements($$);
++} <elList>
++
++%destructor {
++  aMathParser.DeleteArrayOfAttributes($$);
++} <attrList>
++
++%%
++
++result: expression {
++  aResult = $1;
++};
++
++expression: STARTMATH ENDMATH {
++  aMathParser.NewMathMLElement(kElementMath, $$);
++} | STARTDMATH ENDMATH {
++  aMathParser.NewMathMLElement(kElementMath, $$);
++  $$->SetAttribute(kAttributeDisplay, kValueBlock);
++} | STARTMATH compoundTermList ENDMATH {
++  aMathParser.NewMrowLikeElement(kElementMath, $2, $$);
++} | STARTDMATH compoundTermList ENDMATH {
++  aMathParser.NewMrowLikeElement(kElementMath, $2, $$);
++  $$->SetAttribute(kAttributeDisplay, kValueBlock);
++};
++
++compoundTermList: compoundTerm {
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement($1);
++} | compoundTermList compoundTerm {
++  $$ = $1;
++  $$->AppendElement($2);
++};
++
++compoundTerm: mob SUB closedTerm SUP closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMunderover, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $5);
++} | mob SUB closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMunder, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsub, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | mob SUP closedTerm SUB closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMunderover, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $5);
++  aMathParser.AppendChildTo($$, $3);
++} | mob SUP closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMover, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsup, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | mib SUB closedTerm SUP closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMunderover, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $5);
++} | mib SUB closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMunder, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsub, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | mib SUP closedTerm SUB closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMunderover, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $5);
++} | mib SUP closedTerm {
++  if (aMathParser.mItexDisplayMode) {
++    aMathParser.NewMathMLElement(kElementMover, $$);
++  } else {
++    aMathParser.NewMathMLElement(kElementMsup, $$);
++  }
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | closedTerm SUB closedTerm SUP closedTerm {
++  aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $5);
++} | closedTerm SUP closedTerm SUB closedTerm {
++  aMathParser.NewMathMLElement(kElementMsubsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $5);
++  aMathParser.AppendChildTo($$, $3);
++} | closedTerm SUB closedTerm {
++  aMathParser.NewMathMLElement(kElementMsub, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | closedTerm SUP closedTerm {
++  aMathParser.NewMathMLElement(kElementMsup, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $3);
++} | SUB closedTerm {
++  aMathParser.NewMathMLElement(kElementMsup, $$);
++  nsIDOMElement* emptymo;
++  aMathParser.NewMathMLElement(kElementMo, emptymo);
++  aMathParser.AppendChildTo($$, emptymo);
++  aMathParser.AppendChildTo($$, $2);
++} | SUP closedTerm {
++  aMathParser.NewMathMLElement(kElementMsup, $$);
++  nsIDOMElement* emptymo;
++  aMathParser.NewMathMLElement(kElementMo, emptymo);
++  aMathParser.AppendChildTo($$, emptymo);
++  aMathParser.AppendChildTo($$, $2);
++} | closedTerm {
++  $$ = $1;
++};
++
++closedTerm: array
++| unaryminus
++| unaryplus
++| mib
++| mi {
++  $$ = $1;
++} | mn {
++  $$ = $1;
++} | mo 
++| tensor
++| multi
++| mfrac
++| binom
++| msqrt 
++| mroot
++| munder
++| mover
++| bar
++| vec
++| hat
++| dot
++| ddot
++| dddot
++| ddddot
++| check
++| tilde
++| moverbrace
++| munderbrace
++| munderline
++| munderover
++| emptymrow
++| mathclap
++| mathllap
++| mathrlap
++| displaystyle
++| textstyle
++| textsize
++| scriptsize
++| scriptscriptsize
++| italics
++| bold
++| roman
++| cal
++| bbold
++| frak
++| slashed
++| boxed
++| space
++| textstring
++| thinspace
++| medspace
++| thickspace
++| quad
++| qquad
++| negspace
++| phantom
++| href
++| statusline
++| tooltip
++| toggle
++| color
++| texover
++| texatop
++| MROWOPEN closedTerm MROWCLOSE {
++  $$ = $2;
++} | MROWOPEN compoundTermList MROWCLOSE {
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, $$);
++} | left compoundTermList right {
++  $2->InsertElementAt(0, $1);
++  $2->AppendElement($3);
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, $$);
++} | mathenv
++| substack
++| pmod
++| mtext;
++
++left: LEFT leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++} | LEFT OTHERDELIM {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++} | LEFT PERIODDELIM {
++  aMathParser.mItexRowPosn = 2;
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  $2->Release();
++};
++
++right: RIGHT rightdelim {
++  $$ = $2;
++} | RIGHT OTHERDELIM {
++  $$ = $2;
++} | RIGHT PERIODDELIM {
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  $2->Release();
++};
++
++bigdelim: BIG leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.2em"), $$);
++} | BIG rightdelim {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.2em"), $$);
++} | BIG OTHERDELIM {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.2em"), $$);
++} | BBIG leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.8em"), $$);
++} | BBIG rightdelim {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.8em"), $$);
++} | BBIG OTHERDELIM {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.8em"), $$);
++} | BIGG leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("2.4em"), $$);
++} | BIGG rightdelim {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("2.4em"), $$);
++} | BIGG OTHERDELIM {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("2.4em"), $$);
++} | BBIGG leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("3em"), $$);
++} | BBIGG rightdelim {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("3em"), $$);
++} | BBIGG OTHERDELIM {
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("3em"), $$);
++} | BIGL leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.2em"), $$);
++} | BIGL OTHERDELIM {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.2em"), $$);
++} | BBIGL leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.8em"), $$);
++} | BBIGL OTHERDELIM {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("1.8em"), $$);
++} | BIGGL leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("2.4em"), $$);
++} | BIGGL OTHERDELIM {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("2.4em"), $$);
++} | BBIGGL leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("3em"), $$);
++} | BBIGGL OTHERDELIM {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $2;
++  ItexSetSize(NS_LITERAL_STRING("3em"), $$);
++};
++
++leftdelim: LEFTDELIM {
++  $$ = $1;
++} | BRACKETOPEN {
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("["), $$);
++}
++
++rightdelim: RIGHTDELIM {
++  $$ = $1;
++}  | BRACKETCLOSE {
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("]"), $$);
++}
++
++mtext: MTEXT {
++  $$ = $1;
++};
++
++unaryminus: UNARYMINUS {
++    $$ = $1;
++    $$->SetAttribute(kAttributeLspace, kValueVerythinmathspace);
++    $$->SetAttribute(kAttributeRspace, NS_LITERAL_STRING("0em"));
++};
++
++unaryplus: UNARYPLUS {
++    $$ = $1;
++    $$->SetAttribute(kAttributeLspace, kValueVerythinmathspace);
++    $$->SetAttribute(kAttributeRspace, NS_LITERAL_STRING("0em"));
++};
++
++mi: MI {
++  $$ = $1;
++}
++
++mib: MIB {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $1;
++};
++
++mn: MN {
++  $$ = $1;
++}
++
++mob: MOB {
++    aMathParser.mItexRowPosn = 2;
++    $$ = $1;
++    $$->SetAttribute(kAttributeLspace, kValueThinmathspace);
++    $$->SetAttribute(kAttributeRspace, kValueThinmathspace);
++};
++
++mo: mob
++| bigdelim
++| MO {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $1;
++} | MOL {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $1;
++} | MOLL {
++  aMathParser.mItexRowPosn = 2;
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $1);
++  $$->SetAttribute(kAttributeScriptlevel, NS_LITERAL_STRING("0"));
++} | rightdelim {
++  $$ = $1;
++  $$->SetAttribute(kAttributeStretchy, kValueFalse);
++} | leftdelim {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $1;
++  $$->SetAttribute(kAttributeStretchy, kValueFalse);
++} | OTHERDELIM {
++  $$ = $1;
++  $$->SetAttribute(kAttributeStretchy, kValueFalse);
++} | MOF {
++  $$ = $1;
++  $$->SetAttribute(kAttributeStretchy, kValueFalse);
++} | PERIODDELIM {
++  $$ = $1;
++} | MOS {
++  aMathParser.mItexRowPosn=2;
++  $$ = $1;
++  $$->SetAttribute(kAttributeLspace, kValueMediummathspace);
++  $$->SetAttribute(kAttributeRspace, kValueMediummathspace);
++} | MOP {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $1;
++  $$->SetAttribute(kAttributeLspace, NS_LITERAL_STRING("0em"));
++  $$->SetAttribute(kAttributeRspace, kValueThinmathspace);
++} | MOR {
++  aMathParser.mItexRowPosn = 2;
++  $$ = $1;
++  $$->SetAttribute(kAttributeLspace, kValueVerythinmathspace);
++} | OPERATORNAME TEXTSTRING {
++  aMathParser.mItexRowPosn = 2;
++  aMathParser.NewTokenElement(kElementMo, *($2), $$);
++  delete $2;
++  $$->SetAttribute(kAttributeLspace, NS_LITERAL_STRING("0em"));
++  $$->SetAttribute(kAttributeRspace, kValueThinmathspace);
++} | MATHOP TEXTSTRING {
++  aMathParser.mItexRowPosn = 2;
++  aMathParser.NewTokenElement(kElementMo, *($2), $$);
++  delete $2;
++  $$->SetAttribute(kAttributeLspace, kValueThinmathspace);
++  $$->SetAttribute(kAttributeRspace, kValueThinmathspace);
++} | MATHBIN TEXTSTRING {
++  aMathParser.mItexRowPosn = 2;
++  aMathParser.NewTokenElement(kElementMo, *($2), $$);
++  delete $2;
++  $$->SetAttribute(kAttributeLspace, kValueMediummathspace);
++  $$->SetAttribute(kAttributeRspace, kValueMediummathspace);
++} | MATHREL TEXTSTRING {
++  aMathParser.mItexRowPosn = 2;
++  aMathParser.NewTokenElement(kElementMo, *($2), $$);
++  delete $2;
++  $$->SetAttribute(kAttributeLspace, kValueThickmathspace);
++  $$->SetAttribute(kAttributeRspace, kValueThickmathspace);
++};
++
++space: SPACE ST INTONE ENDST ST INTTWO ENDST ST INTTHREE ENDST {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeHeight,  *($3));
++  delete $3;
++  $$->SetAttribute(kAttributeDepth, *($6));
++  delete $6;
++  $$->SetAttribute(kAttributeWidth, *($9));
++  delete $9;
++};
++
++statusline: STATLINE TEXTSTRING closedTerm {
++  aMathParser.NewMathMLElement(kElementMaction, $$);
++  $$->SetAttribute(kAttributeActiontype, kValueStatusline);
++  aMathParser.AppendChildTo($$, $3);
++  nsIDOMElement* mtext;
++  aMathParser.NewTokenElement(kElementMtext, *($2), mtext);
++  delete $2;
++  aMathParser.AppendChildTo($$, mtext);
++};
++
++tooltip: TOOLTIP TEXTSTRING closedTerm {
++  aMathParser.NewMathMLElement(kElementMaction, $$);
++  $$->SetAttribute(kAttributeActiontype, kValueTooltip);
++  aMathParser.AppendChildTo($$, $3);
++  nsIDOMElement* mtext;
++  aMathParser.NewTokenElement(kElementMtext, *($2), mtext);
++  delete $2;
++  aMathParser.AppendChildTo($$, mtext);
++};
++
++toggle: TOGGLE closedTerm closedTerm {
++  aMathParser.NewMathMLElement(kElementMaction, $$);
++  $$->SetAttribute(kAttributeActiontype, kValueToggle);
++  $$->SetAttribute(kAttributeSelection, NS_LITERAL_STRING("2"));
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, $3);
++};
++
++color: COLOR ATTRLIST compoundTermList {
++  aMathParser.NewMrowLikeElement(kElementMstyle, $3, $$);
++  $$->SetAttribute(kAttributeMathcolor, *($2));
++  delete $2;
++} | BGCOLOR ATTRLIST compoundTermList {
++  aMathParser.NewMrowLikeElement(kElementMstyle, $3, $$);
++  $$->SetAttribute(kAttributeBackground, *($2));
++  delete $2;
++};
++
++mathrlap: RLAP closedTerm {
++  aMathParser.NewMathMLElement(kElementMpadded, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeWidth, NS_LITERAL_STRING("0"));
++};
++
++mathllap: LLAP closedTerm {
++  aMathParser.NewMathMLElement(kElementMpadded, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeWidth, NS_LITERAL_STRING("0"));
++  $$->SetAttribute(kAttributeLspace, NS_LITERAL_STRING("-100%width"));
++};
++
++mathclap: CLAP closedTerm {
++  aMathParser.NewMathMLElement(kElementMpadded, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeWidth, NS_LITERAL_STRING("0"));
++  $$->SetAttribute(kAttributeLspace, NS_LITERAL_STRING("-50%width"));
++};
++
++textstring: TEXTBOX TEXTSTRING {
++  aMathParser.NewTokenElement(kElementMtext, *($2), $$);
++  delete $2;
++};
++
++displaystyle: DISPLAY closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeDisplaystyle, kValueTrue);
++};
++
++textstyle: TEXTSTY closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeDisplaystyle, kValueFalse);
++};
++
++textsize: TEXTSIZE closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeScriptlevel, NS_LITERAL_STRING("0"));
++};
++
++scriptsize: SCSIZE closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeScriptlevel, NS_LITERAL_STRING("1"));
++};
++
++scriptscriptsize: SCSCSIZE closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeScriptlevel, NS_LITERAL_STRING("2"));
++};
++
++italics: ITALICS closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeMathvariant, kValueItalic);
++};
++
++slashed: SLASHED closedTerm {
++  aMathParser.NewMathMLElement(kElementMenclose, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeNotation, kValueUpdiagonalstrike);
++};
++
++boxed: BOXED closedTerm {
++  aMathParser.NewMathMLElement(kElementMenclose, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeNotation, kValueBox);
++};
++
++bold: BOLD closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeMathvariant, kValueBold);
++};
++
++roman: RM closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  $$->SetAttribute(kAttributeMathvariant, kValueNormal);
++};
++
++bbold: BB closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  // XXX Not supported yet. See bug 114365.
++  //$$->SetAttribute(kAttributeMathvariant, kValueDoubleStruck);
++  aMathParser.mMathvariant = aMathParser.NS_MATHVARIANT_NORMAL;
++};
++
++frak: FRAK closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  // XXX Not supported yet. See bug 114365.
++  //$$->SetAttribute(kAttributeMathvariant, kValueFraktur);
++  aMathParser.mMathvariant = aMathParser.NS_MATHVARIANT_NORMAL;
++};
++
++cal: CAL closedTerm {
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  aMathParser.AppendChildTo($$, $2);
++  // XXX Not supported yet. See bug 114365.
++  //$$->SetAttribute(kAttributeMathvariant, kValueScript);
++  aMathParser.mMathvariant = aMathParser.NS_MATHVARIANT_NORMAL;
++};
++
++thinspace: THINSPACE {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeWidth, kValueThinmathspace);
++};
++
++medspace: MEDSPACE {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeWidth, kValueMediummathspace);
++};
++
++thickspace: THICKSPACE {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeWidth, kValueThickmathspace);
++};
++
++quad: QUAD {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeWidth, NS_LITERAL_STRING("1em"));
++};
++
++qquad: QQUAD {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeWidth, NS_LITERAL_STRING("2em"));
++};
++
++negspace: NEGSPACE {
++  aMathParser.NewMathMLElement(kElementMspace, $$);
++  $$->SetAttribute(kAttributeWidth, NS_LITERAL_STRING("-0.1667em"));
++};
++
++phantom: PHANTOM closedTerm {
++  aMathParser.NewMathMLElement(kElementMphantom, $$);
++  aMathParser.AppendChildTo($$, $2);
++};
++
++href: HREF TEXTSTRING closedTerm {
++  $$ = $3;
++  $$->SetAttribute(kAttributeHref, *($2));
++  delete $2;
++};
++
++tensor: TENSOR closedTerm MROWOPEN subsupList MROWCLOSE {
++  $4->InsertElementAt(0, $2);
++  aMathParser.NewMrowLikeElement(kElementMmultiscripts, $4, $$);
++} | TENSOR closedTerm subsupList {
++  $3->InsertElementAt(0, $2);
++  aMathParser.NewMrowLikeElement(kElementMmultiscripts, $3, $$);
++};
++
++multi: MULTI MROWOPEN subsupList MROWCLOSE closedTerm MROWOPEN subsupList
++       MROWCLOSE {
++  $7->InsertElementAt(0, $5);
++  aMathParser.NewMrowLikeElement(kElementMmultiscripts, $7, $$);
++  nsIDOMElement* mprescripts;
++  aMathParser.NewMathMLElement(kElementMprescripts, mprescripts);
++  aMathParser.AppendChildTo($$, mprescripts);
++  aMathParser.AppendChildrenTo($$, $3);
++} | MULTI MROWOPEN subsupList MROWCLOSE closedTerm EMPTYMROW {
++  $3->InsertElementAt(0, $5);
++  nsIDOMElement* mprescripts;
++  aMathParser.NewMathMLElement(kElementMprescripts, mprescripts);
++  $3->InsertElementAt(1, mprescripts);
++  aMathParser.NewMrowLikeElement(kElementMmultiscripts, $3, $$);
++} | MULTI EMPTYMROW closedTerm MROWOPEN subsupList MROWCLOSE {
++  $5->InsertElementAt(0, $3);
++  aMathParser.NewMrowLikeElement(kElementMmultiscripts, $5, $$);
++};
++
++subsupList: subsupTerm {
++  $$ = $1;
++} | subsupList subsupTerm {
++  $$ = $1;
++  $$->AppendElement((*$2)[0]);
++  $$->AppendElement((*$2)[1]);
++  delete $2;
++};
++
++subsupTerm: SUB closedTerm SUP closedTerm {
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement($2);
++  $$->AppendElement($4);
++} | SUB closedTerm {
++  nsIDOMElement* none;
++  aMathParser.NewMathMLElement(kElementNone, none);
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement($2);
++  $$->AppendElement(none);
++} | SUP closedTerm {
++  nsIDOMElement* none;
++  aMathParser.NewMathMLElement(kElementNone, none);
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement(none);
++  $$->AppendElement($2);
++} | SUB SUP closedTerm {
++  nsIDOMElement* none;
++  aMathParser.NewMathMLElement(kElementNone, none);
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement(none);
++  $$->AppendElement($3);
++};
++
++mfrac: FRAC closedTerm closedTerm {
++  aMathParser.NewMathMLElement(kElementMfrac, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, $3);
++} | TFRAC closedTerm closedTerm {
++  nsIDOMElement* mfrac;
++  aMathParser.NewMathMLElement(kElementMfrac, mfrac);
++  aMathParser.AppendChildTo(mfrac, $2);
++  aMathParser.AppendChildTo(mfrac, $3);
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  $$->SetAttribute(kAttributeDisplaystyle, kValueFalse);
++  aMathParser.AppendChildTo($$, mfrac);
++};
++
++pmod: PMOD closedTerm {
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("("), mo1);
++  mo1->SetAttribute(kAttributeLspace, kValueMediummathspace);
++  
++  nsIDOMElement* mo2;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("mod"), mo2);
++  mo2->SetAttribute(kAttributeRspace, kValueThinmathspace);
++  
++  nsIDOMElement* mo3;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING(")"), mo3);
++  mo3->SetAttribute(kAttributeRspace, kValueMediummathspace);
++  
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mo2);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo3);
++}
++
++texover: MROWOPEN compoundTermList TEXOVER compoundTermList MROWCLOSE {
++  nsIDOMElement* num;
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, num);
++
++  nsIDOMElement* den;
++  aMathParser.NewMrowLikeElement(kElementMrow, $4, den);
++
++  aMathParser.NewMathMLElement(kElementMfrac, $$);
++  aMathParser.AppendChildTo($$, num);
++  aMathParser.AppendChildTo($$, den);
++} | left compoundTermList TEXOVER compoundTermList right {
++  nsIDOMElement* num;
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, num);
++
++  nsIDOMElement* den;
++  aMathParser.NewMrowLikeElement(kElementMrow, $4, den);
++
++  nsIDOMElement* mfrac;
++  aMathParser.NewMathMLElement(kElementMfrac, mfrac);
++  aMathParser.AppendChildTo(mfrac, num);
++  aMathParser.AppendChildTo(mfrac, den);
++
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, mfrac);
++  aMathParser.AppendChildTo($$, $5);
++};
++
++texatop: MROWOPEN compoundTermList TEXATOP compoundTermList MROWCLOSE {
++  nsIDOMElement* num;
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, num);
++
++  nsIDOMElement* den;
++  aMathParser.NewMrowLikeElement(kElementMrow, $4, den);
++
++  aMathParser.NewMathMLElement(kElementMfrac, $$);
++  aMathParser.AppendChildTo($$, num);
++  aMathParser.AppendChildTo($$, den);
++  $$->SetAttribute(kAttributeLinethickness, NS_LITERAL_STRING("0"));
++} | left compoundTermList TEXATOP compoundTermList right {
++  nsIDOMElement* num;
++  aMathParser.NewMrowLikeElement(kElementMrow, $2, num);
++
++  nsIDOMElement* den;
++  aMathParser.NewMrowLikeElement(kElementMrow, $4, den);
++
++  nsIDOMElement* mfrac;
++  aMathParser.NewMathMLElement(kElementMfrac, mfrac);
++  aMathParser.AppendChildTo(mfrac, num);
++  aMathParser.AppendChildTo(mfrac, den);
++  mfrac->SetAttribute(kAttributeLinethickness, NS_LITERAL_STRING("0"));
++
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, mfrac);
++  aMathParser.AppendChildTo($$, $5);
++};
++
++binom: BINOM closedTerm closedTerm {
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("("), mo1);
++
++  nsIDOMElement* mfrac;
++  aMathParser.NewMathMLElement(kElementMfrac, mfrac);
++  aMathParser.AppendChildTo(mfrac, $2);
++  aMathParser.AppendChildTo(mfrac, $3);
++  mfrac->SetAttribute(kAttributeLinethickness, NS_LITERAL_STRING("0"));
++
++  nsIDOMElement* mo2;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING(")"), mo2);
++
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mfrac);
++  aMathParser.AppendChildTo($$, mo2);
++} | TBINOM closedTerm closedTerm {
++  nsIDOMElement* mfrac;
++  aMathParser.NewMathMLElement(kElementMfrac, mfrac);
++  aMathParser.AppendChildTo(mfrac, $2);
++  aMathParser.AppendChildTo(mfrac, $3);
++  mfrac->SetAttribute(kAttributeLinethickness, NS_LITERAL_STRING("0"));
++
++  nsIDOMElement* mstyle;
++  aMathParser.NewMathMLElement(kElementMstyle, mstyle);
++  mstyle->SetAttribute(kAttributeDisplaystyle, kValueFalse);
++  aMathParser.AppendChildTo(mstyle, mfrac);
++
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("("), mo1);
++
++  nsIDOMElement* mo2;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING(")"), mo2);
++
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mstyle);
++  aMathParser.AppendChildTo($$, mo2);
++};
++
++munderbrace: UNDERBRACE closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x23DF);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMunder, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++munderline: UNDERLINE closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x332);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMunder, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++moverbrace: OVERBRACE closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x23DE);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++bar: BAR closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0xAF);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  mo->SetAttribute(kAttributeStretchy, kValueFalse);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++} | WIDEBAR closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0xAF);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++vec: VEC closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x21C0);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  mo->SetAttribute(kAttributeStretchy, kValueFalse);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++} | WIDEVEC closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x21C0);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++dot: DOT closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x2D9);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++ddot: DDOT closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0xA8);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++dddot: DDDOT closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x20DB);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++ddddot: DDDDOT closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x20DC);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++tilde: TILDE closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x2DC);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  mo->SetAttribute(kAttributeStretchy, kValueFalse);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++} | WIDETILDE closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x2DC);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++check: CHECK closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x2C7);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  mo->SetAttribute(kAttributeStretchy, kValueFalse);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++} | WIDECHECK closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x2C7);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++hat: HAT closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x5E);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  mo->SetAttribute(kAttributeStretchy, kValueFalse);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++} | WIDEHAT closedTerm {
++  nsIDOMElement* mo;
++  PRUnichar t = PRUnichar(0x5E);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo);
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, mo);
++};
++
++msqrt: SQRT closedTerm {
++  aMathParser.NewMathMLElement(kElementMsqrt, $$);
++  aMathParser.AppendChildTo($$, $2);
++};
++
++mroot: SQRT BRACKETOPEN compoundTermList BRACKETCLOSE closedTerm {
++  nsIDOMElement* mrow;
++  aMathParser.NewMrowLikeElement(kElementMrow, $3, mrow);
++  aMathParser.NewMathMLElement(kElementMroot, $$);
++  aMathParser.AppendChildTo($$, $5);
++  aMathParser.AppendChildTo($$, mrow);
++} | ROOT closedTerm closedTerm {
++  aMathParser.NewMathMLElement(kElementMroot, $$);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $2);
++};
++
++munder: XARROW BRACKETOPEN compoundTermList BRACKETCLOSE EMPTYMROW {
++  nsIDOMElement* mrow;
++  aMathParser.NewMrowLikeElement(kElementMrow, $3, mrow);
++  aMathParser.NewMathMLElement(kElementMunder, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, mrow);
++} | UNDER closedTerm closedTerm {
++  aMathParser.NewMathMLElement(kElementMunder, $$);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $2);
++};
++
++mover: XARROW closedTerm {
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, $2);
++} | OVER closedTerm closedTerm {
++  aMathParser.NewMathMLElement(kElementMover, $$);
++  aMathParser.AppendChildTo($$, $3);
++  aMathParser.AppendChildTo($$, $2);
++};
++
++munderover: XARROW BRACKETOPEN compoundTermList BRACKETCLOSE closedTerm {
++  nsIDOMElement* mrow;
++  aMathParser.NewMrowLikeElement(kElementMrow, $3, mrow);
++  aMathParser.NewMathMLElement(kElementMunderover, $$);
++  aMathParser.AppendChildTo($$, $1);
++  aMathParser.AppendChildTo($$, mrow);
++  aMathParser.AppendChildTo($$, $5);
++} | UNDEROVER closedTerm closedTerm closedTerm {
++  aMathParser.NewMathMLElement(kElementMunderover, $$);
++  aMathParser.AppendChildTo($$, $4);
++  aMathParser.AppendChildTo($$, $2);
++  aMathParser.AppendChildTo($$, $3);
++};
++
++emptymrow: EMPTYMROW {
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++};
++
++mathenv: BEGINENV MATRIX tableRowList ENDENV MATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mtable);
++} |  BEGINENV GATHERED tableRowList ENDENV GATHERED {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("1.0ex"));
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mtable);
++} | BEGINENV PMATRIX tableRowList ENDENV PMATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("("), mo1);
++  nsIDOMElement* mo2;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING(")"), mo2);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mrow);
++  aMathParser.AppendChildTo($$, mo2);
++} | BEGINENV BMATRIX tableRowList ENDENV BMATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("["), mo1);
++  nsIDOMElement* mo2;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("]"), mo2);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mrow);
++  aMathParser.AppendChildTo($$, mo2);
++} | BEGINENV VMATRIX tableRowList ENDENV VMATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  nsIDOMElement* mo1;
++  PRUnichar t = PRUnichar(0x2223);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo1);
++  nsIDOMElement* mo2;
++  t = PRUnichar(0x2223);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo2);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mrow);
++  aMathParser.AppendChildTo($$, mo2);
++} | BEGINENV BBMATRIX tableRowList ENDENV BBMATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("{"), mo1);
++  nsIDOMElement* mo2;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("}"), mo2);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mrow);
++  aMathParser.AppendChildTo($$, mo2);
++} | BEGINENV VVMATRIX tableRowList ENDENV VVMATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  nsIDOMElement* mo1;
++  PRUnichar t = PRUnichar(0x2225);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo1);
++  nsIDOMElement* mo2;
++  t = PRUnichar(0x2225);
++  aMathParser.NewTokenElement(kElementMo, nsAutoString(&t, 1), mo2);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mrow);
++  aMathParser.AppendChildTo($$, mo2);
++} | BEGINENV SMALLMATRIX tableRowList ENDENV SMALLMATRIX {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  aMathParser.NewMathMLElement(kElementMstyle, $$);
++  $$->SetAttribute(kAttributeScriptlevel, NS_LITERAL_STRING("2"));
++  aMathParser.AppendChildTo($$, mrow);
++} | BEGINENV CASES tableRowList ENDENV CASES {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeColumnalign, NS_LITERAL_STRING("left left"));
++  nsIDOMElement* mrow;
++  aMathParser.NewMathMLElement(kElementMrow, mrow);
++  aMathParser.AppendChildTo(mrow, mtable);
++  nsIDOMElement* mo1;
++  aMathParser.NewTokenElement(kElementMo, NS_LITERAL_STRING("{"), mo1);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mo1);
++  aMathParser.AppendChildTo($$, mrow);
++} | BEGINENV ALIGNED tableRowList ENDENV ALIGNED {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeColumnalign,
++   NS_LITERAL_STRING("right left right left right left right left right left"));
++  mtable->SetAttribute(kAttributeColumnSpacing, NS_LITERAL_STRING("0em"));
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mtable);
++} | BEGINENV ARRAY ARRAYALIGN ST columnAlignList ENDST tableRowList ENDENV
++  ARRAY {
++  aMathParser.NewMrowLikeElement(kElementMtable, $7, $$);
++  $$->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  $$->SetAttribute(kAttributeAlign, (*$3));
++  delete $3;
++  $$->SetAttribute(kAttributeColumnalign, (*$5));
++  delete $5;
++} | BEGINENV ARRAY ST columnAlignList ENDST tableRowList ENDENV ARRAY {
++  aMathParser.NewMrowLikeElement(kElementMtable, $6, $$);
++  $$->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  $$->SetAttribute(kAttributeColumnalign, (*$4));
++  delete $4;
++}
++
++columnAlignList: columnAlignList COLUMNALIGN {
++  $$ = $1;
++  $$->Append(*$2);
++  $$->Append(PRUnichar(' '));
++  delete $2;
++} | COLUMNALIGN {
++  $$ = $1;
++}
++
++substack: SUBSTACK MROWOPEN tableRowList MROWCLOSE {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  mtable->SetAttribute(kAttributeColumnalign, NS_LITERAL_STRING("center"));
++  mtable->SetAttribute(kAttributeRowspacing, NS_LITERAL_STRING("0.5ex"));
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mtable);
++};
++
++array: ARRAY MROWOPEN tableRowList MROWCLOSE {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $3, mtable);
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mtable);
++} | ARRAY MROWOPEN ARRAYOPTS MROWOPEN arrayopts MROWCLOSE tableRowList
++    MROWCLOSE {
++  nsIDOMElement* mtable;
++  aMathParser.NewMrowLikeElement(kElementMtable, $7, mtable);
++  for (PRUint32 i = 0; i < $5->Length(); i++) {
++    aMathParser.AttachAttribute(mtable, (*$5)[i]);
++  }
++  delete $5;
++  aMathParser.NewMathMLElement(kElementMrow, $$);
++  aMathParser.AppendChildTo($$, mtable);
++};
++
++arrayopts: anarrayopt {
++  $$ = new nsTArray<nsIDOMAttr*>;
++  $$->AppendElement($1);
++} | arrayopts anarrayopt {
++  $$ = $1;
++  $$->AppendElement($2);
++} | padding {
++  $$ = $1;
++} | arrayopts padding {
++  $$ = $1;
++  $$->AppendElement((*$2)[0]);
++  $$->AppendElement((*$2)[1]);
++  delete $2;
++};
++
++anarrayopt: collayout {
++  $$ = $1;
++} | colalign {
++  $$ = $1;
++} | rowalign {
++  $$ = $1;
++} | align {
++  $$ = $1;
++} | eqrows {
++  $$ = $1;
++} | eqcols {
++  $$ = $1;
++} | rowlines {
++  $$ = $1;
++} | collines {
++  $$ = $1;
++} | frame {
++  $$ = $1;
++};
++
++collayout: COLLAYOUT ATTRLIST {
++  aMathParser.NewAttribute(kAttributeColumnalign, (*$2), $$);
++  delete $2;
++};
++
++colalign: COLALIGN ATTRLIST {
++  aMathParser.NewAttribute(kAttributeColumnalign, (*$2), $$);
++  delete $2;
++};
++
++rowalign: ROWALIGN ATTRLIST {
++  aMathParser.NewAttribute(kAttributeRowalign, (*$2), $$);
++  delete $2;
++};
++
++align: ALIGN ATTRLIST {
++  aMathParser.NewAttribute(kAttributeAlign, (*$2), $$);
++  delete $2;
++};
++
++eqrows: EQROWS ATTRLIST {
++  aMathParser.NewAttribute(kAttributeEqualrows, (*$2), $$);
++  delete $2;
++};
++
++eqcols: EQCOLS ATTRLIST {
++  aMathParser.NewAttribute(kAttributeEqualcolumns, (*$2), $$);
++  delete $2;
++};
++
++rowlines: ROWLINES ATTRLIST {
++  aMathParser.NewAttribute(kAttributeRowlines, (*$2), $$);
++  delete $2;
++};
++
++collines: COLLINES ATTRLIST {
++  aMathParser.NewAttribute(kAttributeColumnlines, (*$2), $$);
++  delete $2;
++};
++
++frame: FRAME ATTRLIST {
++  aMathParser.NewAttribute(kAttributeFrame, (*$2), $$);
++  delete $2;
++};
++
++padding: PADDING ATTRLIST {
++  nsIDOMAttr* attr1;
++  aMathParser.NewAttribute(kAttributeRowspacing, (*$2), attr1);
++  nsIDOMAttr* attr2;
++  aMathParser.NewAttribute(kAttributeColumnSpacing, (*$2), attr2);
++  delete $2;
++  $$ = new nsTArray<nsIDOMAttr*>;
++  $$->AppendElement(attr1);
++  $$->AppendElement(attr2);
++};
++
++tableRowList: tableRow {
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement($1);
++} | tableRowList ROWSEP tableRow {
++  $$ = $1;
++  $$->AppendElement($3);
++};
++
++tableRow: simpleTableRow {
++  aMathParser.NewMrowLikeElement(kElementMtr, $1, $$);
++} | optsTableRow {
++  $$ = $1;
++};
++
++simpleTableRow: tableCell {
++  $$ = new nsTArray<nsIDOMElement*>;
++  $$->AppendElement($1);
++} | simpleTableRow COLSEP tableCell {
++  $$ = $1;
++  $$->AppendElement($3);
++};
++
++optsTableRow: ROWOPTS MROWOPEN rowopts MROWCLOSE simpleTableRow {
++  aMathParser.NewMrowLikeElement(kElementMtr, $5, $$);
++  for (PRUint32 i = 0; i < $3->Length(); i++) {
++    aMathParser.AttachAttribute($$, (*$3)[i]);
++  }
++  delete $3;
++};
++
++rowopts: arowopt {
++  $$ = new nsTArray<nsIDOMAttr*>;
++  $$->AppendElement($1);
++} | rowopts arowopt {
++  $$ = $1;
++  $$->AppendElement($2);
++}
++
++arowopt: colalign {
++  $$ = $1;
++} | rowalign {
++  $$ = $1;
++};
++
++tableCell: /* empty */ {
++  aMathParser.NewMathMLElement(kElementMtd, $$);
++} | compoundTermList {
++  aMathParser.NewMrowLikeElement(kElementMtd, $1, $$);
++} | CELLOPTS MROWOPEN cellopts MROWCLOSE compoundTermList {
++  aMathParser.NewMrowLikeElement(kElementMtd, $5, $$);
++  for (PRUint32 i = 0; i < $3->Length(); i++) {
++    aMathParser.AttachAttribute($$, (*$3)[i]);
++  }
++  delete $3;
++};
++
++cellopts: acellopt {
++  $$ = new nsTArray<nsIDOMAttr*>;
++  $$->AppendElement($1);
++} | cellopts acellopt {
++  $$ = $1;
++  $$->AppendElement($2);
++};
++
++acellopt: colalign {
++  $$ = $1;
++} | rowalign {
++  $$ = $1;
++} | rowspan {
++  $$ = $1;
++} | colspan {
++  $$ = $1;
++};
++
++rowspan: ROWSPAN ATTRLIST {
++  aMathParser.NewAttribute(kAttributeRowspan, (*$2), $$);
++  delete $2;
++};
++
++colspan: COLSPAN ATTRLIST {
++  aMathParser.NewAttribute(kAttributeColumnspan, (*$2), $$);
++  delete $2;
++};
++
++%%
+diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/src/nsMathParser.cpp
+--- a/extensions/mathparser/src/nsMathParser.cpp
++++ b/extensions/mathparser/src/nsMathParser.cpp
+@@ -34,16 +34,18 @@
+  * the provisions above, a recipient may use your version of this file under
+  * the terms of any one of the MPL, the GPL or the LGPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
+ 
+ #include "nsMathParser.h"
+ #include "nsMathMLNames.h"
+ #include "nsSimpleParser.tab.hpp"
++#undef PARSER_HEADER_H
++#include "nsItexParser.tab.hpp"
+ #include "nsMemory.h"
+ #include "nsIClassInfoImpl.h"
+ 
+ NS_IMPL_CLASSINFO(nsMathParser, NULL, 0, NS_MATHPARSER_CID)
+ NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
+ 
+ nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
+   mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+@@ -140,28 +142,35 @@ nsMathParser::Parse(nsIDOMDocument*  aDo
+   mCurrentChar = aString.BeginReading();
+   mLastChar = aString.EndReading();
+ 
+   // Initialize parameters
+   mLineNumber = 1;
+   mStartLine = mCurrentChar; 
+   mError = PR_FALSE;
+   mDocument = aDocument;
++  mMathvariant = NS_MATHVARIANT_NORMAL;
+ 
+   switch(mParsingMode) {
+ 
+     case MATHPARSER_MODE_SIMPLE: {
+       yy::nsSimpleParser parser(*this, *aResult);
+       parser.parse();
+       break;
+     }
+ 
+-    case MATHPARSER_MODE_ITEX:
+-      return NS_ERROR_NOT_IMPLEMENTED;
++    case MATHPARSER_MODE_ITEX: {
++      yy::nsItexParser parser(*this, *aResult);
++      mItexMode = NS_ITEX_MODE_NORMAL;
++      mItexRowPosn = 0;
++      mItexDisplayMode = 0;
++      mItexEnvStart = PR_FALSE;
++      parser.parse();
+       break;
++    }    
+       
+     default:
+       break;
+   }
+ 
+   if (mError) {
+     return NS_ERROR_FAILURE;
+   }
+@@ -185,17 +194,123 @@ nsMathParser::NewAttribute(const nsAStri
+ 
+ void
+ nsMathParser::NewTokenElement(const nsAString& aTagName,
+                               const nsAString& aText,
+                               nsIDOMElement*&  aResult)
+ {
+   nsCOMPtr<nsIDOMNode> nodeOut;
+   nsIDOMText *text;
+-  mDocument->CreateTextNode(aText, &text);
++  nsAutoString s;
++
++  // XXX Some mathvariant values are not supported and hence, we convert some
++  // characters. When bug 114365 is fixed, this workaround won't be necessary.
++  if (mMathvariant == NS_MATHVARIANT_NORMAL) {
++    s = aText;
++  } else if (mMathvariant == NS_MATHVARIANT_BBOLD) {
++    for (const PRUnichar *p = aText.BeginReading();
++         p < aText.EndReading(); p++) {
++      PRUnichar c = *p;
++      if (PRUnichar('a') <= c && c <= PRUnichar('z')) {
++        // 0x1D552 + c - 'a'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDD52 + c - 'a'));
++      } else if (c == PRUnichar('C')) {
++        s.Append(PRUnichar(0x2102));
++      } else if (c == PRUnichar('H')) {
++        s.Append(PRUnichar(0x210D));
++      } else if (c == PRUnichar('N')) {
++        s.Append(PRUnichar(0x2115));
++      } else if (c == PRUnichar('P')) {
++        s.Append(PRUnichar(0x2119));
++      } else if (c == PRUnichar('Q')) {
++        s.Append(PRUnichar(0x211A));
++      } else if (c == PRUnichar('R')) {
++        s.Append(PRUnichar(0x211D));
++      } else if (c == PRUnichar('Z')) {
++        s.Append(PRUnichar(0x2124));
++      } else if (PRUnichar('A') <= c && c <= PRUnichar('Z')) {
++        // 0x1D538 + c - 'A'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDD38 + c - 'A'));
++      } else  if ('0' <= c && c <= '9') {
++        // 0x1D7D8 + c - '0'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDFD8 + c - '0'));
++      } else {
++        s.Append(c);
++      }
++    }
++  } else if (mMathvariant ==  NS_MATHVARIANT_CALLIGRAPHIC) {
++    for (const PRUnichar *p = aText.BeginReading();
++         p < aText.EndReading(); p++) {
++      PRUnichar c = *p;
++      if (c == PRUnichar('e')) {
++        s.Append(PRUnichar(0x212F));
++      } else if (c == PRUnichar('g')) {
++        s.Append(PRUnichar(0x210A));
++      } else if (c == PRUnichar('o')) {
++        s.Append(PRUnichar(0x2134));
++      } else if (PRUnichar('a') <= c && c <= PRUnichar('z')) {
++        // 0x1D4B6 + c - 'a'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDCB6 + c - 'a'));
++      } else if (c == PRUnichar('B')) {
++        s.Append(PRUnichar(0x212C));
++      } else if (c == PRUnichar('E')) {
++        s.Append(PRUnichar(0x2130));
++      } else if (c == PRUnichar('F')) {
++        s.Append(PRUnichar(0x2131));
++      } else if (c == PRUnichar('H')) {
++        s.Append(PRUnichar(0x210B));
++      } else if (c == PRUnichar('I')) {
++        s.Append(PRUnichar(0x2110));
++      } else if (c == PRUnichar('L')) {
++        s.Append(PRUnichar(0x2112));
++      } else if (c == PRUnichar('M')) {
++        s.Append(PRUnichar(0x2133));
++      } else if (c == PRUnichar('R')) {
++        s.Append(PRUnichar(0x211B));
++      } else if (PRUnichar('A') <= c && c <= PRUnichar('Z')) {
++        // 0x1D49C + c - 'A'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDC9C + c - 'A'));
++      } else {
++        s.Append(c);
++      }
++    }
++  } else if (mMathvariant == NS_MATHVARIANT_FRAKTUR) {
++    for (const PRUnichar *p = aText.BeginReading();
++         p < aText.EndReading(); p++) {
++      PRUnichar c = *p;
++      if (PRUnichar('a') <= c && c <= PRUnichar('z')) {
++        // 0x1D51E + c - 'a'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDD1e + c - 'a'));
++      } else if (c == PRUnichar('C')) {
++        s.Append(PRUnichar(0x212D));
++      } else if (c == PRUnichar('H')) {
++        s.Append(PRUnichar(0x210C));
++      } else if (c == PRUnichar('I')) {
++        s.Append(PRUnichar(0x2111));
++      } else if (c == PRUnichar('R')) {
++        s.Append(PRUnichar(0x211C));
++      } else if (c == PRUnichar('Z')) {
++        s.Append(PRUnichar(0x2128));
++      } else if (PRUnichar('A') <= c && c <= PRUnichar('Z')) {
++        // 0x1D586 + c - 'A'
++        s.Append(PRUnichar(0xD835));
++        s.Append(PRUnichar(0xDD04 + c - 'A'));
++      } else {
++        s.Append(c);
++      }
++    }
++  }
++
++  mDocument->CreateTextNode(s, &text);
+   NewMathMLElement(aTagName, aResult);
+   aResult->AppendChild(text, getter_AddRefs(nodeOut));
+   text->Release();
+ }
+ 
+ void
+ nsMathParser::NewMathMLElement(const nsAString& aTagName,
+                                nsIDOMElement*&  aResult)
+@@ -693,8 +808,1215 @@ nsMathParser::SimpleGetNextToken(nsSimpl
+   }
+ 
+   if (TryMatchingMtext(aValue->el)) {
+     return yy::nsSimpleParser::token::MTEXT;
+   }
+   
+   return yy::nsSimpleParser::token::END;
+ }
++
++PRInt32
++nsMathParser::ItexGetNextToken(nsItexParserSemanticType *aValue)
++{
++  // This function is a rewriting of itex2MML's lexical analyser. The 
++  // behaviour is inspired from itex2MML.l with slight modifications.
++  // The corresponding Flex rules are indicated as a comment. 
++
++  // For XARROW's and similar we accept more input values than itex2MML
++  // See http://golem.ph.utexas.edu/~distler/blog/archives/002282.html#comments
++
++  // Note: if a word is a prefix of another, we must try to match the
++  // former before the latter.
++
++  if (mItexMode == NS_ITEX_MODE_NORMAL ||
++      mItexMode == NS_ITEX_MODE_MATH ||
++      mItexMode == NS_ITEX_MODE_INT1 ||
++      mItexMode == NS_ITEX_MODE_INT2 ||
++      mItexMode == NS_ITEX_MODE_INT3 ||
++      mItexMode == NS_ITEX_MODE_ARRAYOPTIONS ||
++      mItexMode == NS_ITEX_MODE_COLOPTS) {
++    SkipWhiteSpaces();
++  }
++
++  if (IsEndOfBuffer()) {
++    if (mItexMode != NS_ITEX_MODE_NORMAL) {
++      // syntax error: unexpected end of buffer
++      SendSyntaxErrorToConsole();
++    }
++    // <INITIAL>EOF
++    return yy::nsItexParser::token::END;
++  }
++
++  SaveCharPos();
++
++  if (mItexRowPosn > 0) {
++    mItexRowPosn--;
++  }
++
++  switch (mItexMode) {
++ 
++  case NS_ITEX_MODE_NORMAL:
++
++    // "$"{1,2}
++    if (TryMatching(PRUnichar('$'))) {
++      mItexMode = NS_ITEX_MODE_MATH;
++      mItexRowPosn = 2;
++      if (!IsEndOfBuffer() && TryMatching(PRUnichar('$'))) {
++        mItexDisplayMode = 1;
++        return yy::nsItexParser::token::STARTDMATH;
++      }
++      mItexDisplayMode = 0;
++      return yy::nsItexParser::token::STARTMATH;
++    }
++
++    // "\\[" 
++    if (TryMatching(NS_LITERAL_STRING("\\["))) {
++      mItexMode = NS_ITEX_MODE_MATH;
++      mItexRowPosn = 2;
++      mItexDisplayMode = 1;
++      return yy::nsItexParser::token::STARTDMATH;
++    }
++
++    break;
++
++  case NS_ITEX_MODE_MATH:
++
++    // "$"{1,2} | "\\]"
++    if (TryMatching(NS_LITERAL_STRING("$$")) || TryMatching(PRUnichar('$')) ||
++        TryMatching(NS_LITERAL_STRING("\\]"))) {
++      mItexMode = NS_ITEX_MODE_NORMAL;
++      return yy::nsItexParser::token::ENDMATH;
++    }
++
++    // [a-zA-Z]+ (accept more Unicode characters)
++    if (TryMatchingMi(aValue->el)) {
++      return yy::nsItexParser::token::MI;
++    }
++      
++    // [0-9,.]*[0-9]+ (accept more Unicode characters)
++    if (TryMatchingMn(aValue->el)) {
++      return yy::nsItexParser::token::MN;
++    }
++
++    // "-"
++    if (TryMatching(PRUnichar('-'))) {
++      if (mItexRowPosn == 1) {
++        NewTokenElement(kElementMo, nsAutoString(mSavedChar, 1), aValue->el);
++        return yy::nsItexParser::token::UNARYMINUS;
++      } else {
++        PRUnichar t(0x2212);
++        NewTokenElement(kElementMo, nsAutoString(&t, 1), aValue->el);
++        return yy::nsItexParser::token::MO;
++      }
++    }
++
++    // "+"
++    if (TryMatching(PRUnichar('+'))) {
++      NewTokenElement(kElementMo, nsAutoString(mSavedChar, 1), aValue->el);
++      if (mItexRowPosn == 1) {
++        return yy::nsItexParser::token::UNARYPLUS;
++      } else {
++        return yy::nsItexParser::token::MO;
++      }
++    }
++
++    if (TryMatching(PRUnichar('{'))) {
++      SaveCharPos();
++
++      // "{"[\t\r\n ]*"}"
++      SkipWhiteSpaces();
++      if (!IsEndOfBuffer() && TryMatching(PRUnichar('}'))) {
++        return yy::nsItexParser::token::EMPTYMROW;
++      }
++
++      // "{"
++      GoBackToSavedChar();
++      mItexRowPosn = 2;
++      return yy::nsItexParser::token::MROWOPEN;
++    }
++ 
++    NS_TRY_EMPTY(PRUnichar('}'), MROWCLOSE)
++    NS_TRY_EMPTY(PRUnichar('^'), SUP)
++    NS_TRY_EMPTY(PRUnichar('_'), SUB)
++    NS_TRY_EMPTY_WITH_ACTION(PRUnichar('&'), mItexRowPosn = 2, COLSEP)
++    NS_TRY_TOKEN2(PRUnichar('!'), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar('#'), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar('('), kElementMo, LEFTDELIM)
++    NS_TRY_TOKEN2(PRUnichar(')'), kElementMo, RIGHTDELIM)
++    NS_TRY_TOKEN2(PRUnichar('*'), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar(','), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar('.'), kElementMo, PERIODDELIM)
++    NS_TRY_TOKEN2(PRUnichar('/'), kElementMo, OTHERDELIM)
++    NS_TRY_TOKEN2(PRUnichar(':'), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar(';'), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar('='), kElementMo, MOL)
++    NS_TRY_TOKEN2(PRUnichar('?'), kElementMo, MOL)
++    NS_TRY_EMPTY(PRUnichar('['), BRACKETOPEN)
++    NS_TRY_EMPTY(PRUnichar(']'), BRACKETCLOSE)
++    NS_TRY_TOKEN2(PRUnichar('`'), kElementMo, MOL)
++    NS_TRY_TOKEN(PRUnichar('|'), kElementMo, 0x2223, OTHERDELIM)
++    NS_TRY_TOKEN2(PRUnichar('~'), kElementMo, MOL)
++    NS_TRY_TOKEN(NS_LITERAL_STRING("\'\'\'\'"), kElementMo, 0x2057, MOL)
++    NS_TRY_TOKEN(NS_LITERAL_STRING("\'\'\'"), kElementMo, 0x2034, MOL)
++    NS_TRY_TOKEN(NS_LITERAL_STRING("\'\'"), kElementMo, 0x2033, MOL)
++    NS_TRY_TOKEN(NS_LITERAL_STRING("\'"), kElementMo, 0x2032, MOL)
++
++    if (TryMatching(PRUnichar('\\'))) {
++
++      // not in Itex2MML: backslash at the end of the buffer
++      if (IsEndOfBuffer()) {
++        NewTokenElement(kElementMo,
++                        NS_LITERAL_STRING("\\"), aValue->el);
++        return yy::nsItexParser::token::MO;
++      }
++
++      SaveCharPos();
++
++      NS_TRY_EMPTY(PRUnichar('!'), NEGSPACE)
++      NS_TRY_EMPTY(PRUnichar(','), THINSPACE)
++      NS_TRY_EMPTY(PRUnichar(':'), MEDSPACE)
++      NS_TRY_EMPTY(PRUnichar(' '), MEDSPACE) // not in Itex2MML
++      NS_TRY_EMPTY(PRUnichar(';'), THICKSPACE)
++      NS_TRY_EMPTY_WITH_ACTION(PRUnichar('\\'), mItexRowPosn = 2, ROWSEP)
++      NS_TRY_TOKEN2(PRUnichar('#'), kElementMo, MOL)
++      NS_TRY_TOKEN2(PRUnichar('$'), kElementMi, MI)
++      NS_TRY_TOKEN2(PRUnichar('%'), kElementMi, MI)
++      NS_TRY_TOKEN2(PRUnichar('&'), kElementMi, MI)
++      NS_TRY_TOKEN2(PRUnichar('{'), kElementMo, LEFTDELIM)
++      NS_TRY_TOKEN(PRUnichar('|'), kElementMo, 0x2225, OTHERDELIM)
++      NS_TRY_TOKEN2(PRUnichar('}'), kElementMo, RIGHTDELIM)
++
++      if (*mCurrentChar == PRUnichar('a')) {
++        NS_TRY_EMPTY(NS_LITERAL_STRING("atop"), TEXATOP)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("asymp"), kElementMo, 0x2248, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ast"), kElementMo, 0x2A, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("arrayopts"), ARRAYOPTS)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("array"), ARRAY)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("arg"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("arctan"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("arcsin"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("arccos"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("approxeq"), kElementMo, 0x224A, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("approx"), kElementMo, 0x2248, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("angle"), kElementMo, 0x2220, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("amalg"), kElementMo, 0x2A3F, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("alpha"), kElementMi, 0x3B1, MI)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("align"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 ALIGN) 
++        NS_TRY_TOKEN(NS_LITERAL_STRING("aleph"), kElementMi, 0x2135, MI)
++      } else if (*mCurrentChar == PRUnichar('b')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bumpeq"), kElementMo, 0x224F, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bullet"), kElementMo, 0x2022, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("boxtimes"), kElementMo, 0x22A0, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("boxplus"), kElementMo, 0x229E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("boxminus"), kElementMo, 0x229F, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("boxed"), BOXED)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("boxdot"), kElementMo, 0x22A1, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bowtie"), kElementMo, 0x22C8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bottom"), kElementMo, 0x22A5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bot"), kElementMo, 0x22A5, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("boldsymbol"), BOLD)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("blacktriangleright"),
++                     kElementMo, 0x25B8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("blacktriangleleft"),
++                     kElementMo, 0x25C2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("blacktriangledown"),
++                     kElementMo, 0x25BE, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("blacktriangle"),
++                     kElementMo, 0x25B4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("blacksquare"), kElementMo, 0x25AA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("blacklozenge"), kElementMo, 0x29EB, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("binom"), BINOM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigwedge"), kElementMo, 0x22C0, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigvee"), kElementMo, 0x22C1, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("biguplus"), kElementMo, 0x2A04, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigtriangleup"),
++                     kElementMo, 0x25B3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigtriangledown"),
++                     kElementMo, 0x25BD, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigstar"), kElementMo, 0x2605, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigsqcup"), kElementMo, 0x2A06, MOB)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("bigr"), BIG)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigotimes"), kElementMo, 0x2A02, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigoplus"), kElementMo, 0x2A01, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigodot"), kElementMo, 0x2A00, MOB)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("bigl"), BIGL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("biggr"), BIGG)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("biggl"), BIGGL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("bigg"), BIGG)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigcup"), kElementMo, 0x22C3, MOB)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("bgcolor"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 BGCOLOR)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigcirc"), kElementMo, 0x25EF, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("bigcap"), kElementMo, 0x22C2, MOB)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("big"), BIG)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("between"), kElementMo, 0x226C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("beth"), kElementMi, 0x2136, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("beta"), kElementMi, 0x3B2, MI)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("begin"),
++                                 mItexEnvStart = PR_TRUE;
++                                 mItexMode = NS_ITEX_MODE_MATHENV, BEGINENV)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("because"), kElementMo, 0x2235, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("barwedge"), kElementMo, 0x2305, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("bar"), BAR)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("backslash"), kElementMo, '\\', MO)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("backsimeq"), kElementMo, 0x22CD, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("backsim"), kElementMo, 0x223D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("backprime"), kElementMo, 0x2035, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("backepsilon"), kElementMi, 0x3F6, MI)
++      } else if (*mCurrentChar == PRUnichar('c')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curvearrowright"),
++                     kElementMo, 0x21B7, MOL)   
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curvearrowleft"),
++                     kElementMo, 0x21B6, MOL)    
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curvearrowbotright"),
++                     kElementMo, 0x293B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curlywedge"), kElementMo, 0x22CF, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curlyvee"), kElementMo, 0x22CE, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curlyeqsucc"), kElementMo, 0x22DF, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("curlyeqprec"), kElementMo, 0x22DE, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("cup"), kElementMo, 0x222A, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("csc"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("coth"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("cot"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("cosh"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("cos"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("coproduct"), kElementMo, 0x2210, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("coprod"), kElementMo, 0x2210, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("contourintegral"),
++                     kElementMo, 0x222E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("conint"), kElementMo, 0x222E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("cong"), kElementMo, 0x2245, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("colspan"),
++                               mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                               COLSPAN)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("color"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 COLOR)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("colonsim"),
++                      kElementMo, 0x2236, 0x223C, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("coloneqq"), kElementMo, 0x2254, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("coloneq"),
++                      kElementMo, 0x2236, 0x2212, MOS)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("colonapprox"),
++                      kElementMo, 0x2236, 0x2248, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("colon"), kElementMo, 0x3A, MOR)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("collines"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 COLLINES)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("collayout"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 COLLAYOUT)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("colalign"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 COLALIGN)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("clubsuit"), kElementMo, 0x2663, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("closure"), WIDEBAR)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circleddash"), kElementMo, 0x229D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circledcirc"), kElementMo, 0x229A, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circledast"), kElementMo, 0x229B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circlearrowright"),
++                     kElementMo, 0x21BB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circlearrowleft"),
++                     kElementMo, 0x21BA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circeq"), kElementMo, 0x2257, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("circ"), kElementMo, 0x2218, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("chi"), kElementMi, 0x3C7, MI)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("check"), CHECK)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("cellopts"), CELLOPTS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("cdots"), kElementMi, 0x22EF, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("cdot"), kElementMo, 0x22C5, MO)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("cap"), kElementMo, 0x2229, MOL)
++      } else if (*mCurrentChar == PRUnichar('d')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("duparr"), kElementMo, 0x2195, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("downuparrow"), kElementMo, 0x2195, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("downharpoonright"),
++                     kElementMo, 0x21C2, MOL) 
++        NS_TRY_TOKEN(NS_LITERAL_STRING("downharpoonleft"),
++                     kElementMo, 0x21C3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("downdownarrows"),
++                     kElementMo, 0x21CA, MOL)    
++        NS_TRY_TOKEN(NS_LITERAL_STRING("downarrow"),
++                     kElementMo, 0x2193, OTHERDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("doubleintegral"),
++                     kElementMo, 0x222C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("doublebarwedge"),
++                     kElementMo, 0x2306, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dots"), kElementMi, 0x2026, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dotplus"), kElementMo, 0x2214, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("doteqdot"), kElementMo, 0x2251, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("doteq"), kElementMo, 0x2250, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("dot"), DOT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("divideontimes"),
++                     kElementMo, 0x22C7, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("div"), kElementMo, 0xF7, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("displaystyle"),
++                                 mItexRowPosn = 2, DISPLAY)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("dim"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("digamma"), kElementMi, 0x3DD, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("diamondsuit"), kElementMo, 0x2662, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("diamond"), kElementMo, 0x22C4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("delta"), kElementMi, 0x3B4, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ddots"), kElementMi, 0x22F1, MI)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("ddot"), DDOT)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("dddot"), DDDOT)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("ddddot"), DDDDOT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ddagger"), kElementMo, 0x2021, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("det"), kElementMi, MIB)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("deg"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dblcolon"), kElementMo, 0x2237, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dashv"), kElementMo, 0x22A3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dashrightarrow"),
++                     kElementMo, 0x290F, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dashleftarrow"),
++                     kElementMo, 0x290E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("darr"), kElementMo, 0x2193, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("dagger"), kElementMo, 0x2020, MOL)
++      } else if (*mCurrentChar == PRUnichar('e')) {
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("exp"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("exists"), kElementMo, 0x2203, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eth"), kElementMi, 0xF0, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eta"), kElementMi, 0x3B7, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("equiv"), kElementMo, 0x2261, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("equalrows"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 EQROWS)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("equalcols"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 EQCOLS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eqslantless"), kElementMo, 0x2A95, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eqslantgtr"), kElementMo, 0x2A96, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eqqcolon"), kElementMo, 0x2255, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eqcolon"), kElementMo, 0x2239, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("eqcirc"), kElementMo, 0x2256, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("epsilon"), kElementMi, 0x3F5, MI)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("end"),
++                                 mItexMode = NS_ITEX_MODE_MATHENV, ENDENV)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("emptyset"), kElementMi, 0x2205, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("empty"), kElementMi, 0x2205, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("embedsin"), kElementMo, 0x21AA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ell"), kElementMi, 0x2113, MI)
++      } else if (*mCurrentChar == PRUnichar('g')) {
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("gvertneqq"),
++                      kElementMo, 0x2269, 0xFE00, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gtrsim"), kElementMo, 0x2273, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gtrless"), kElementMo, 0x2277, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gtreqqless"), kElementMo, 0x2A8C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gtreqless"), kElementMo, 0x22DB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gtrdot"), kElementMo, 0x22D7, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gtrapprox"), kElementMo, 0x2A86, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gt"), kElementMo, '>', MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gnsim"), kElementMo, 0x22E7, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gneqq"), kElementMo, 0x2269, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gneq"), kElementMo, 0x2A88, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gnapprox"), kElementMo, 0x2A8A, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ggg"), kElementMo, 0x22D9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gg"), kElementMo, 0x226B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("geqslant"), kElementMo, 0x2A7E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("geqq"), kElementMo, 0x2267, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("geq"), kElementMo, 0x2265, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ge"), kElementMo, 0x2265, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("gcd"), kElementMi, MIB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("gamma"), kElementMi, 0x3B3, MI)
++      } else if (*mCurrentChar == PRUnichar('i')) {
++          NS_TRY_TOKEN(NS_LITERAL_STRING("iota"), kElementMi, 0x3B9, MI)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("invamp"), kElementMo, 0x214B, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("intersection"),
++                       kElementMo, 0x2229, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("intercal"), kElementMo, 0x22BA, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("integral"), kElementMo, 0x222B, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("int"), kElementMo, 0x222B, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("infty"), kElementMn, 0x221E, MN)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("infinity"), kElementMn, 0x221E, MN)
++          NS_TRY_TOKEN3(NS_LITERAL_STRING("inf"), kElementMi, MIB)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("in"), kElementMo, 0x2208, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("implies"), kElementMo, 0x21D2, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("impliedby"), kElementMo, 0x21D0, MOL)
++          NS_TRY_TOKEN4(NS_LITERAL_STRING("imath"), kElementMi,
++                        0xD835, 0xDEA4 /* = 0x1D6A4 */, MI)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("iint"), kElementMo, 0x222C, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("iiint"), kElementMo, 0x222D, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("iiiint"), kElementMo, 0x2A0C, MOL)
++          NS_TRY_TOKEN(NS_LITERAL_STRING("iff"), kElementMo, 0x21D4, MOL)
++      } else if (*mCurrentChar == PRUnichar('l')) {
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("lvertneqq"),
++                      kElementMo, 0x2268, 0xFE00, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ltimes"), kElementMo, 0x22C9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lt"), kElementMo, '<', MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lozenge"), kElementMo, 0x25CA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("looparrowright"),
++                     kElementMo, 0x21AC, MOL) 
++        NS_TRY_TOKEN(NS_LITERAL_STRING("looparrowleft"),
++                     kElementMo, 0x21AB, MOL)    
++        NS_TRY_TOKEN(NS_LITERAL_STRING("longrightarrow"),
++                     kElementMo, 0x27F6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("longleftarrow"),
++                     kElementMo, 0x27F5, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("log"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lnsim"), kElementMo, 0x22E6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lneqq"), kElementMo, 0x2268, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lneq"), kElementMo, 0x2A87, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lnapprox"), kElementMo, 0x2A89, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("ln"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lll"), kElementMo, 0x22D8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ll"), kElementMo, 0x226A, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("limsup"), kElementMi, MIB)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("liminf"), kElementMi, MIB)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("lim"), kElementMi, MIB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lhd"), kElementMo, 0x22B2, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("lg"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lfloor"), kElementMo, 0x230A, LEFTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lesssim"), kElementMo, 0x2272, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lessgtr"), kElementMo, 0x2276, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lesseqqgtr"), kElementMo, 0x2A8B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lesseqgtr"), kElementMo, 0x22DA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lessdot"), kElementMo, 0x22D6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lessapprox"), kElementMo, 0x2A85, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leqslant"), kElementMo, 0x2A7D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leqq"), kElementMo, 0x2266, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leq"), kElementMo, 0x2264, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lefttorightarrow"),
++                     kElementMo, 0x27F3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftthreetimes"),
++                     kElementMo, 0x22CB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftsquigarrow"),
++                     kElementMo, 0x21DC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftrightsquigarrow"),
++                     kElementMo, 0x21AD, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftrightharpoons"),
++                     kElementMo, 0x21CB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftrightarrows"),
++                     kElementMo, 0x21C6, MOL) 
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftrightarrow"),
++                     kElementMo, 0x2194, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftleftarrows"),
++                     kElementMo, 0x21C7, MOL)   
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftarrowtail"),
++                     kElementMo, 0x21A2, MOL)    
++        NS_TRY_TOKEN(NS_LITERAL_STRING("leftarrow"), kElementMo, 0x2190, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("left"),
++                                 mItexRowPosn = 2, LEFT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("le"), kElementMo, 0x2264, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ldots"), kElementMi, 0x2026, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lceil"), kElementMo, 0x2308, LEFTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lbrace"), kElementMo, '{', LEFTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("langle"), kElementMo, 0x27E8, LEFTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lang"), kElementMo, 0x27E8, LEFTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("lambda"), kElementMi, 0x3BB, MI)
++      } else if (*mCurrentChar == PRUnichar('m')) {
++        NS_TRY_EMPTY(NS_LITERAL_STRING("multiscripts"), MULTI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("multimap"), kElementMo, 0x22B8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("mu"), kElementMi, 0x3BC, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("mp"), kElementMo, 0x2213, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("models"), kElementMo, 0x22A7, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("mod"), kElementMo, MOS);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("minusb"), kElementMo, 0x229F, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("min"), kElementMi, MIB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("mid"), kElementMo, 0x2223, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("mho"), kElementMi, 0x2127, MI)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("medspace"), MEDSPACE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("measuredangle"),
++                     kElementMo, 0x2221, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("max"), kElementMi, MIB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("mapsto"), kElementMo, 0x21A6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("map"), kElementMo, 0x21A6, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mathrm"), RM)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mathrlap"), RLAP)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathrel"),
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, MATHREL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathop"),
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, MATHOP)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mathllap"), LLAP)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mathit"), ITALICS)
++        if (mMathvariant == NS_MATHVARIANT_NORMAL) {
++          NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathfrak"),
++                                   mMathvariant = NS_MATHVARIANT_FRAKTUR, FRAK);
++          NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathfr"),
++                                   mMathvariant = NS_MATHVARIANT_FRAKTUR, FRAK);
++        }
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mathclap"), CLAP)
++        if (mMathvariant == NS_MATHVARIANT_NORMAL) {
++          NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathcal"),
++                                   mMathvariant = NS_MATHVARIANT_CALLIGRAPHIC,
++                                   CAL);
++        }
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathbin"),
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, MATHBIN)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mathbf"), BOLD)
++        if (mMathvariant == NS_MATHVARIANT_NORMAL) {
++          NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("mathbb"),
++                                   mMathvariant = NS_MATHVARIANT_BBOLD, BB);
++        }
++      } else if (*mCurrentChar == PRUnichar('n')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nwarrow"), kElementMo, 0x2196, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nwarr"), kElementMo, 0x2196, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nwArrow"), kElementMo, 0x21D6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nwArr"), kElementMo, 0x21D6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nvdash"), kElementMo, 0x22AC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nvDash"), kElementMo, 0x22AD, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nu"), kElementMi, 0x3BD, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ntrianglerighteq"),
++                     kElementMo, 0x22ED, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ntriangleright"),
++                     kElementMo, 0x22EB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ntrianglelefteq"),
++                     kElementMo, 0x22EC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ntriangleleft"),
++                     kElementMo, 0x22EA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nsupseteq"), kElementMo, 0x2289, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("nsupset"),
++                      kElementMo, 0x2283, 0x20D2, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("nsucceq"),
++                      kElementMo, 0x2AB0, 0x338, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nsucc"), kElementMo, 0x2281, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("nsubseteqq"),
++                      kElementMo, 0x2AC5, 0x338, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nsubseteq"), kElementMo, 0x2288, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("nsubset"),
++                      kElementMo, 0x2282, 0x20D2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nsim"), kElementMo, 0x2241, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nshortparallel"),
++                     kElementMo, 0x2226, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nshortmid"), kElementMo, 0x2224, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nrightarrow"),
++                     kElementMo, 0x219B, MOL)       
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("npreceq"),
++                      kElementMo, 0x2AAF, 0x338, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nprec"), kElementMo, 0x2280, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nparallel"), kElementMo, 0x2226, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("notni"), kElementMo, 0x220C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("notin"), kElementMo, 0x2209, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("not"), kElementMo, 0xAC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nmid"), kElementMo, 0x2224, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nless"), kElementMo, 0x226E, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("nleqslant"),
++                      kElementMo, 0x2A7D, 0x338, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("nleqq"),
++                      kElementMo, 0x2266, 0x338, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nleq"), kElementMo, 0x2270, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nleftrightarrow"),
++                     kElementMo, 0x21AE, MOL)   
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nleftarrow"),
++                     kElementMo, 0x219A, MOL)        
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ni"), kElementMo, 0x220B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ngtr"), kElementMo, 0x226F, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("ngeqslant"),
++                      kElementMo, 0x2A7E, 0x338, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("ngeqq"),
++                      kElementMo, 0x2267, 0x338, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ngeq"), kElementMo, 0x2271, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nexists"), kElementMo, 0x2204, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nequiv"), kElementMo, 0x2262, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("neq"), kElementMo, 0x2260, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("negspace"), NEGSPACE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("neg"), kElementMo, 0xAC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nearrow"), kElementMo, 0x2197, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nearr"), kElementMo, 0x2197, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("neArrow"), kElementMo, 0x21D7, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("neArr"), kElementMo, 0x21D7, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ne"), kElementMo, 0x2260, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ncong"), kElementMo, 0x2247, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("natural"), kElementMo, 0x266E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nabla"), kElementMo, 0x2207, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nVDash"), kElementMo, 0x22AF, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nRightarrow"),
++                     kElementMo, 0x21CF, MOL)       
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nLeftrightarrow"),
++                     kElementMo, 0x21CE, MOL)   
++        NS_TRY_TOKEN(NS_LITERAL_STRING("nLeftarrow"),
++                     kElementMo, 0x21CD, MOL)        
++      } else if (*mCurrentChar == PRUnichar('o')) {
++        NS_TRY_EMPTY(NS_LITERAL_STRING("overset"), OVER)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("overline"), WIDEBAR)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("overbrace"), OVERBRACE)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("over"), TEXOVER)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("otimes"), kElementMo, 0x2297, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("oslash"), kElementMo, 0x2298, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("oplus"), kElementMo, 0x2295, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("operatorname"),
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT,
++                                 OPERATORNAME)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("ominus"), kElementMo, 0x2296, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("omicron"), kElementMi, 0x2134, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("omega"), kElementMi, 0x3C9, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("oint"), kElementMo, 0x222E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("odot"), kElementMo, 0x2299, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("odash"), kElementMo, 0x229D, MOL)
++      } else if (*mCurrentChar == PRUnichar('p')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("psi"), kElementMi, 0x3C8, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("propto"), kElementMo, 0x221D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("product"), kElementMo, 0x220F, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("prod"), kElementMo, 0x220F, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("prime"), kElementMo, 0x2032, MOLL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("precsim"), kElementMo, 0x227E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("precnsim"), kElementMo, 0x22E8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("precnapprox"), kElementMo, 0x2AB9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("preceq"), kElementMo, 0x2AAF, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("preccurlyeq"), kElementMo, 0x227C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("precapprox"), kElementMo, 0x2AB7, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("prec"), kElementMo, 0x227A, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("pmod"), PMOD)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("pm"), kElementMo, 0xB1, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("plusb"), kElementMo, 0x229E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("pitchfork"), kElementMo, 0x22D4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("pi"), kElementMi, 0x3C0, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("phi"), kElementMi, 0x3D5, MI)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("phantom"), PHANTOM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("perp"), kElementMo, 0x22A5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("partial"), kElementMo, 0x2202, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("parr"), kElementMo, 0x214B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("parallel"), kElementMo, 0x2225, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("padding"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 PADDING)
++      } else if (*mCurrentChar == PRUnichar('r')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rtimes"), kElementMo, 0x22CA, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("rowspan"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 ROWSPAN)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("rowopts"), ROWOPTS)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("rowlines"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 ROWLINES)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("rowalign"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 ROWALIGN)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("root"), ROOT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("risingdotseq"), kElementMo, 0x2253, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("righttoleftarrow"),
++                     kElementMo, 0x27F2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightthreetimes"),
++                     kElementMo, 0x22CC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightsquigarrow"),
++                     kElementMo, 0x21DD, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightrightarrows"),
++                     kElementMo, 0x21C9, MOL)  
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightleftharpoons"),
++                     kElementMo, 0x21CC, MOL) 
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightleftarrows"),
++                     kElementMo, 0x21C4, MOL)   
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightarrowtail"),
++                     kElementMo, 0x21A3, MOL)    
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rightarrow"), kElementMo, 0x2192, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("right"), RIGHT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rho"), kElementMi, 0x3C1, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rhd"), kElementMo, 0x22B3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rfloor"),
++                     kElementMo, 0x230B, RIGHTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rceil"), kElementMo, 0x2309, RIGHTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rbrace"), kElementMo, '}', RIGHTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rangle"),
++                     kElementMo, 0x27E9, RIGHTDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("rang"), kElementMo, 0x27E9, RIGHTDELIM)
++      } else if(*mCurrentChar == PRUnichar('s')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("swarrow"), kElementMo, 0x2199, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("swarr"), kElementMo, 0x2199, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("swArrow"), kElementMo, 0x21D9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("swArr"), kElementMo, 0x21D9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("supsetneqq"), kElementMo, 0x2ACC, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("supsetneq"), kElementMo, 0x228B, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("supseteqq"), kElementMo, 0x2AC6, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("supseteq"), kElementMo, 0x2287, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("supset"), kElementMo, 0x2283, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("sup"), kElementMi, MIB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sum"), kElementMo, 0x2211, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succsim"), kElementMo, 0x227F, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succnsim"), kElementMo, 0x22E9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succnapprox"), kElementMo, 0x2ABA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succeq"), kElementMo, 0x2AB0, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succcurlyeq"), kElementMo, 0x227D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succapprox"), kElementMo, 0x2AB8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("succ"), kElementMo, 0x227B, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("substack"), SUBSTACK)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("subsetneqq"), kElementMo, 0x2ACB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("subsetneq"), kElementMo, 0x228A, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("subseteqq"), kElementMo, 0x2AC5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("subseteq"), kElementMo, 0x2286, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("subset"), kElementMo, 0x2282, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(kValueStatusline,
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, STATLINE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("star"), kElementMo, 0x22C6, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("stackrel"), OVER)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sslash"), kElementMo, 0x2AFD, MO)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("square"), kElementMo, 0x25A1, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sqsupseteq"), kElementMo, 0x2292, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sqsupset"), kElementMo, 0x2290, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sqsubseteq"), kElementMo, 0x2291, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sqsubset"), kElementMo, 0x228F, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("sqrt"), SQRT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sqcup"), kElementMo, 0x2294, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sqcap"), kElementMo, 0x2293, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sphericalangle"), 
++                     kElementMo, 0x2222, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("spadesuit"), kElementMo, 0x2660, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("space"),
++                                 mItexMode = NS_ITEX_MODE_INT1, SPACE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("smile"), kElementMo, 0x2323, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("smallsmile"), kElementMo, 0x2323, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("smallsetminus"),
++                     kElementMo, 0xFE68, MOF)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("smallfrown"), kElementMo, 0x2322, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("slash"), SLASHED)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("sinh"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("sin"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("simeq"), kElementMo, 0x2243, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sim"), kElementMo, 0x223C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sigma"), kElementMi, 0x3C3, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("shortparallel"),
++                     kElementMo, 0x2225, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("shortmid"), kElementMo, 0x2223, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("sharp"), kElementMo, 0x266F, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("setminus"), kElementMo, 0x2216, MO)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("sec"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("searrow"), kElementMo, 0x2198, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("searr"), kElementMo, 0x2198, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("seArrow"), kElementMo, 0x21D8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("seArr"), kElementMo, 0x21D8, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("scriptsize"), SCSIZE)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("scriptscriptsize"), SCSCSIZE)
++      } else if (*mCurrentChar == PRUnichar('t')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("twoheadrightarrow"),
++                     kElementMo, 0x21A0, MOL) 
++        NS_TRY_TOKEN(NS_LITERAL_STRING("twoheadleftarrow"),
++                     kElementMo, 0x219E, MOL)  
++        NS_TRY_TOKEN(NS_LITERAL_STRING("tripleintegral"),
++                     kElementMo, 0x222D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("trianglerighteq"),
++                     kElementMo, 0x22B5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("triangleright"),
++                     kElementMo, 0x25B9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("triangleq"), kElementMo, 0x225C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("trianglelefteq"),
++                     kElementMo, 0x22B4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("triangleleft"), kElementMo, 0x25C3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("triangledown"), kElementMo, 0x25BF, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("triangle"), kElementMo, 0x25B5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("top"), kElementMo, 0x22A4, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(kValueTooltip,
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, TOOLTIP)
++        NS_TRY_EMPTY(kValueToggle, TOGGLE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("to"), kElementMo, 0x2192, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("timesb"), kElementMo, 0x22A0, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("times"), kElementMo, 0xD7, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("tilde"), TILDE)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("thinspace"), THINSPACE)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("thickspace"), THICKSPACE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("thicksim"), kElementMo, 0x223C, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("thickapprox"), kElementMo, 0x2248, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("theta"), kElementMi, 0x3B8, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("therefore"), kElementMo, 0x2234, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("tfrac"), TFRAC)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("textstyle"),
++                                 mItexRowPosn = 2, TEXTSTY)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("textsize"), TEXTSIZE)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("text"),
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, TEXTBOX)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("tensor"), TENSOR)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("tbinom"), TBINOM)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("tanh"), kElementMi, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("tan"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("tau"), kElementMi, 0x3C4, MI)
++      } else if (*mCurrentChar == PRUnichar('u')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("upuparrows"), kElementMo, 0x21C8, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("upsilon"), kElementMi, 0x3C5, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("uplus"), kElementMo, 0x228E, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("upharpoonright"),
++                     kElementMo, 0x21BE, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("upharpoonleft"),
++                     kElementMo, 0x21BF, MOL)     
++        NS_TRY_TOKEN(NS_LITERAL_STRING("updownarrow"),
++                     kElementMo, 0x2195, OTHERDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("updarr"), kElementMo, 0x2195, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("uparrow"),
++                     kElementMo, 0x2191, OTHERDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("uparr"), kElementMo, 0x2191, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("unrhd"), kElementMo, 0x22B5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("unlhd"), kElementMo, 0x22B4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("union"), kElementMo, 0x222A, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("underset"), UNDER)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("underoverset"), UNDEROVER)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("underline"), UNDERLINE)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("underbrace"), UNDERBRACE)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("udots"), kElementMi, 0x22F0, MI)
++      } else if(*mCurrentChar == PRUnichar('v')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vert"), kElementMo, 0x2223, OTHERDELIM)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("vec"), VEC)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("veebar"), kElementMo, 0x22BB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vee"), kElementMo, 0x2228, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vdots"), kElementMi, 0x22EE, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vdash"), kElementMo, 0x22A2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vartriangleright"),
++                     kElementMo, 0x22B3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vartriangleleft"),
++                     kElementMo, 0x22B2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vartheta"), kElementMi, 0x3D1, MI)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("varsupsetneqq"),
++                      kElementMo, 0x2ACC, 0xFE00, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("varsupsetneq"),
++                      kElementMo, 0x228B, 0xFE00, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("varsubsetneqq"),
++                      kElementMo, 0x2ACB, 0xFE00, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("varsubsetneq"),
++                      kElementMo, 0x228A, 0xFE00, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varsigma"), kElementMi, 0x3C2, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varrho"), kElementMi, 0x3F1, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varpropto"), kElementMo, 0x221D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varpi"), kElementMi, 0x3D6, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varphi"), kElementMi, 0x3C6, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varnothing"), kElementMo, 0x2205, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varkappa"), kElementMi, 0x3F0, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("varepsilon"), kElementMi, 0x3B5, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("vDash"), kElementMo, 0x22A8, MOL)
++      } else if (PRUnichar('a') <= *mCurrentChar &&
++                 *mCurrentChar <= PRUnichar('z')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("zeta"), kElementMi, 0x3B6, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xrightleftharpoons"),
++                     kElementMo, 0x21CC, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xrightarrow"),
++                     kElementMo, 0x2192, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xmapsto"), kElementMo, 0x21A6, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xleftrightharpoons"),
++                     kElementMo, 0x21CB, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xleftrightarrow"),
++                     kElementMo, 0x2194, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xleftarrow"),
++                     kElementMo, 0x2190, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xi"), kElementMi, 0x3BE, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xhookrightarrow"),
++                     kElementMo, 0x21AA, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xhookleftarrow"),
++                     kElementMo, 0x21A9, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xRightarrow"),
++                     kElementMo, 0x21D2, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xLeftrightarrow"),
++                     kElementMo, 0x21D4, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("xLeftarrow"),
++                     kElementMo, 0x21D0, XARROW);
++        NS_TRY_TOKEN(NS_LITERAL_STRING("wr"), kElementMo, 0x2240, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("wp"), kElementMi, 0x2118, MI)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("widevec"), WIDEVEC)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("widetilde"), WIDETILDE)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("widehat"), WIDEHAT)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("widecheck"), WIDECHECK)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("widebar"), WIDEBAR)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("wedge"), kElementMo, 0x2227, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("quadrupleintegral"),
++                     kElementMo, 0x2A0C, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("quad"), QUAD)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("qquad"), QQUAD)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("qed"), kElementMo, 0x25AA, MO)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("ker"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("kappa"), kElementMi, 0x3BA, MI)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("href"),
++                                 mItexMode = NS_ITEX_MODE_PLAINTEXT, HREF)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("jmath"), kElementMi,
++                      0xD835, 0xDEA5 /* = 0x1D6A5 */, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("hookrightarrow"),
++                     kElementMo, 0x21AA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("hookleftarrow"),
++                     kElementMo, 0x21A9, MOL)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("hom"), kElementMi, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("heartsuit"), kElementMo, 0x2661, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("hbar"), kElementMi, 0x210F, MI)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("hat"), HAT)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("frown"), kElementMo, 0x2322, MOL)
++        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("frame"),
++                                 mItexMode = NS_ITEX_MODE_ATTRIBUTELIST,
++                                 FRAME)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("frac"), FRAC)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("forall"), kElementMo, 0x2200, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("flat"), kElementMo, 0x266D, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("fallingdotseq"),
++                     kElementMo, 0x2252, MOL)
++      } else if (PRUnichar('A') <= *mCurrentChar &&
++                 *mCurrentChar <= PRUnichar('Z')) {
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Zeta"), kElementMi, 0x396, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Xi"), kElementMi, 0x39E, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Wedge"), kElementMo, 0x22C0, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Vvdash"), kElementMo, 0x22AA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Vert"), kElementMo, 0x2225, OTHERDELIM)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Vee"), kElementMo, 0x22C1, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Vdash"), kElementMo, 0x22A9, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Vbar"), kElementMo, 0x2AEB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("VDash"), kElementMo, 0x22AB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Upsilon"), kElementMi, 0x3D2, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Upsi"), kElementMi, 0x3D2, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Updownarrow"), kElementMo, 0x21D5, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Uparrow"), kElementMo, 0x21D1, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Union"), kElementMo, 0x22C3, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Theta"), kElementMi, 0x398, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Tau"), kElementMi, 0x3A4, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Supset"), kElementMo, 0x22D1, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Subset"), kElementMo, 0x22D0, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Sigma"), kElementMi, 0x3A3, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Rsh"), kElementMo, 0x21B1, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Rrightarrow"), kElementMo, 0x21DB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Rightarrow"), kElementMo, 0x21D2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Rho"), kElementMi, 0x3A1, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Re"), kElementMi, 0x211C, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Psi"), kElementMi, 0x3A8, MI)
++        NS_TRY_TOKEN3(NS_LITERAL_STRING("Pr"), kElementMi, MIB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Pi"), kElementMi, 0x3A0, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Phi"), kElementMi, 0x3A6, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Perp"), kElementMo, 0x2AEB, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Otimes"), kElementMo, 0x2A37, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Oplus"), kElementMo, 0x2A01, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Omega"), kElementMi, 0x3A9, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Nu"), kElementMi, 0x39D, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Mu"), kElementMi, 0x39C, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Lsh"), kElementMo, 0x21B0, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Longleftrightarrow"),
++                     kElementMo, 0x21D4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Lleftarrow"), kElementMo, 0x21DA, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Leftrightarrow"),
++                     kElementMo, 0x21D4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Leftarrow"), kElementMo, 0x21D0, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Lambda"), kElementMi, 0x39B, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Kappa"), kElementMi, 0x39A, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Iota"), kElementMi, 0x399, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Intersection"), kElementMo, 0x22C2, MOB)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Im"), kElementMi, 0x2111, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Gamma"), kElementMi, 0x393, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Eta"), kElementMi, 0x397, MI)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("Eqqcolon"),
++                      kElementMo, 0x003d, 0x2237, MOS)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("Eqcolon"),
++                      kElementMo, 0x2212, 0x2237, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Downarrow"), kElementMo, 0x21D3, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Diamond"), kElementMo, 0x22C4, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Delta"), kElementMi, 0x394, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Del"), kElementMo, 0x2207, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Cup"), kElementMo, 0x22D3, MOL)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("Colonsim"),
++                      kElementMo, 0x2237, 0x223C, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Coloneqq"), kElementMo, 0x2A74, MOS)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("Coloneq"),
++                      kElementMo, 0x2237, 0x2212, MOS)
++        NS_TRY_TOKEN4(NS_LITERAL_STRING("Colonapprox"),
++                      kElementMo, 0x2237, 0x2248, MOS)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Cap"), kElementMo, 0x22D2, MOL)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Bumpeq"), kElementMo, 0x224E, MOL)
++        NS_TRY_TOKEN(kValueBox, kElementMo, 0x25A1, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("Bigr"), BBIG)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("Bigl"), BBIGL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("Biggr"), BBIGG)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("Biggl"), BBIGGL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("Bigg"), BBIGG)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("Big"), BBIG)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Beta"), kElementMi, 0x392, MI)
++        NS_TRY_TOKEN(NS_LITERAL_STRING("Alpha"), kElementMi, 0x391, MI)
++      }
++
++      // "\\"[a-zA-Z]+ (accept more Unicode characters)
++      if (IsLetter(*mCurrentChar)) {
++        while (!IsEndOfBuffer() && IsLetter(*mCurrentChar)) {
++          mCurrentChar++;
++        }
++        NewTokenElement(kElementMo,
++                        nsAutoString(mSavedChar, mCurrentChar - mSavedChar),
++                        aValue->el);
++        return yy::nsItexParser::token::MOP;
++      }
++
++      // These Itex2MML commands are not supported
++      // "\\includegraphics"(\[[^\]]*\])?\{[^}]*\}
++      // "\&"[a-zA-Z_][a-zA-Z0-9_]*";"
++      // "\&#"[0-9]+";"
++      // "\&#x"[a-fA-F0-9]+";"
++      // "bghighlight"
++      // "bghilight"
++      // "fghighlight"
++      // "fghilight"
++    }
++
++    // More extensions of Itex2MML
++    NS_TRY_TOKEN2(PRUnichar('<'), kElementMo, MOL);
++    NS_TRY_TOKEN2(PRUnichar('>'), kElementMo, MOL);
++    NS_TRY_EMPTY(0x221A, SQRT)
++
++    nsOperatorFlags aFlags;
++    if (TryMatchingMo(aFlags, aValue->el)) {
++      if (NS_MATHML_OPERATOR_IS_MOVABLELIMITS(aFlags)) {
++        return yy::nsItexParser::token::MOB;
++      }
++      if (NS_MATHML_OPERATOR_IS_LARGEOP(aFlags)) {
++        return yy::nsItexParser::token::MOL;
++      }
++      return yy::nsItexParser::token::MO;
++    }
++      
++    if (TryMatchingMtext(aValue->el)) {
++      return yy::nsItexParser::token::MTEXT;
++    }
++    break;
++
++  case NS_ITEX_MODE_ATTRIBUTELIST:
++    if (*mCurrentChar == PRUnichar('{')) {
++      for (mCurrentChar++, SaveCharPos(); !IsEndOfBuffer(); mCurrentChar++) {
++        SkipWhiteSpaces();
++        PRUnichar c = *mCurrentChar;
++        if (c == PRUnichar('}') ||
++            (c != PRUnichar('#') &&
++             c != PRUnichar('.') && c != PRUnichar('-') &&
++             !(PRUnichar('a') <= c && c <= PRUnichar('z')) &&
++             !(PRUnichar('A') <= c && c <= PRUnichar('Z')) &&
++             !(PRUnichar('0') <= c && c <= PRUnichar('9')))) {
++          break;
++        }
++      }
++      if (!IsEndOfBuffer() && *mCurrentChar == PRUnichar('}')) {
++        aValue->str =
++          new nsString(nsAutoString(mSavedChar,  mCurrentChar - mSavedChar));
++        mCurrentChar++;
++        mItexMode = NS_ITEX_MODE_MATH;
++        return yy::nsItexParser::token::ATTRLIST;
++      }
++    }
++    break;
++
++  case NS_ITEX_MODE_MATHENV:
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{matrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, MATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{pmatrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, PMATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{bmatrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, BMATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{Bmatrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, BBMATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{vmatrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, VMATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{Vmatrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, VVMATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{smallmatrix}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, SMALLMATRIX)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{cases}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, CASES)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{aligned}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, ALIGNED)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{gathered}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, GATHERED)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{split}"),
++                             mItexEnvStart = PR_FALSE;
++                             mItexMode = NS_ITEX_MODE_MATH, ALIGNED)
++    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{array}"),
++                             mItexMode = (mItexEnvStart ?
++                                          NS_ITEX_MODE_ARRAYOPTIONS :
++                                          NS_ITEX_MODE_MATH), ARRAY)
++    // This ItexMML command is not supported
++    // "\{svg\}"
++    break;
++
++  case NS_ITEX_MODE_PLAINTEXT:
++    if (*mCurrentChar == PRUnichar('{')) {
++      for (mCurrentChar++, SaveCharPos(); !IsEndOfBuffer(); mCurrentChar++) {
++        if (*mCurrentChar == PRUnichar('}')) {
++          break;
++        }
++      }
++      if (!IsEndOfBuffer()) {
++        aValue->str =
++          new nsString(nsAutoString(mSavedChar,  mCurrentChar - mSavedChar));
++        mCurrentChar++;
++        mItexMode = NS_ITEX_MODE_MATH;
++        return yy::nsItexParser::token::TEXTSTRING;
++      }
++    }
++    break;
++
++  case NS_ITEX_MODE_INT1:
++  case NS_ITEX_MODE_INT2:
++  case NS_ITEX_MODE_INT3:
++    NS_TRY_EMPTY(PRUnichar('{'), ST)
++
++    if (TryMatching(PRUnichar('}'))) {
++      if (mItexMode == NS_ITEX_MODE_INT1) {
++        mItexMode = NS_ITEX_MODE_INT2;
++      } else if (mItexMode == NS_ITEX_MODE_INT2) {
++        mItexMode = NS_ITEX_MODE_INT3;
++      } else {
++        mItexMode = NS_ITEX_MODE_MATH;
++      }
++      return yy::nsItexParser::token::ENDST;
++    }
++    
++    for (SaveCharPos(); !IsEndOfBuffer(); mCurrentChar++) {
++      PRUnichar c = *mCurrentChar;
++      if (!(PRUnichar('0') <= c && c <= PRUnichar('9'))) {
++        break;
++      }
++    }
++    if (mSavedChar != mCurrentChar) {
++      // Itex2MML: the value is measured in tenths of an ex (or em)
++      nsAutoString s(mSavedChar,  mCurrentChar - mSavedChar - 1);
++      s.Append(PRUnichar('.'));
++      s.Append(*(mCurrentChar - 1));
++      if (mItexMode == NS_ITEX_MODE_INT3) {
++        s.Append(NS_LITERAL_STRING("em"));
++      } else {
++        s.Append(NS_LITERAL_STRING("ex"));
++      }
++      aValue->str = new nsString(s);
++      if (mItexMode == NS_ITEX_MODE_INT1) {
++        return yy::nsItexParser::token::INTONE;
++      }
++      if (mItexMode == NS_ITEX_MODE_INT2) {
++        return yy::nsItexParser::token::INTTWO;
++      }
++      if (mItexMode == NS_ITEX_MODE_INT3) {
++        return yy::nsItexParser::token::INTTHREE;
++      }
++    }
++    break;
++
++  case NS_ITEX_MODE_ARRAYOPTIONS:
++    if (TryMatching(NS_LITERAL_STRING("[t]"))) {
++      aValue->str = new nsString(NS_LITERAL_STRING("axis 1"));
++      return yy::nsItexParser::token::ARRAYALIGN;
++    } else if (TryMatching(NS_LITERAL_STRING("[c]"))) {
++      aValue->str = new nsString(NS_LITERAL_STRING("center"));
++      return yy::nsItexParser::token::ARRAYALIGN;
++    } else if (TryMatching(NS_LITERAL_STRING("[b]"))) {
++      aValue->str = new nsString(NS_LITERAL_STRING("axis -1"));
++      return yy::nsItexParser::token::ARRAYALIGN;
++    } else if (TryMatching(PRUnichar('{'))) {
++      mItexMode = NS_ITEX_MODE_COLOPTS;
++      return yy::nsItexParser::token::ST;
++    }
++    break;
++
++  case NS_ITEX_MODE_COLOPTS:
++    if (TryMatching(PRUnichar('}'))) {
++      mItexEnvStart = PR_FALSE;
++      mItexMode = NS_ITEX_MODE_MATH;
++      return yy::nsItexParser::token::ENDST;
++    } else if (TryMatching(PRUnichar('c'))) {
++      aValue->str = new nsString(NS_LITERAL_STRING("center"));
++      return yy::nsItexParser::token::COLUMNALIGN;
++    } else if (TryMatching(PRUnichar('l'))) {
++      aValue->str = new nsString(NS_LITERAL_STRING("left"));
++      return yy::nsItexParser::token::COLUMNALIGN;
++    } else if (TryMatching(PRUnichar('r'))) {
++      aValue->str = new nsString(NS_LITERAL_STRING("right"));
++      return yy::nsItexParser::token::COLUMNALIGN;
++    }
++    break;
++        
++  default:
++    break;
++  }
++
++  // syntax error: send END token
++  SendSyntaxErrorToConsole();
++  return yy::nsItexParser::token::END;
++}
+diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/src/nsMathParser.h
+--- a/extensions/mathparser/src/nsMathParser.h
++++ b/extensions/mathparser/src/nsMathParser.h
+@@ -53,29 +53,61 @@
+ #include "nsIDOMText.h"
+ #include "nsIDocument.h"
+ #include "nsServiceManagerUtils.h"
+ #include "nsStringAPI.h"
+ #include "nsMathMLOperatorDictionary.h"
+ 
+ namespace yy {
+ class nsSimpleParser;
++class nsItexParser;
+ }
+ 
+ class nsMathParser : public nsIMathParser
+ {
+   friend class yy::nsSimpleParser;
++  friend class yy::nsItexParser;
+ 
+   union nsSimpleParserSemanticType
+   {
+     nsTArray<nsIDOMElement*>* list;
+     nsIDOMElement*            el;
+     void*                     empty;
+   };
+ 
++  union nsItexParserSemanticType
++  {
++    nsTArray<nsIDOMElement*>* elList;
++    nsTArray<nsIDOMAttr*>*    attrList;
++    nsIDOMElement*            el;
++    nsIDOMAttr*               attr;
++    nsString*                 str;
++    void*                     empty;
++  };
++
++  enum nsItexMode {
++    NS_ITEX_MODE_NORMAL,
++    NS_ITEX_MODE_MATH,
++    NS_ITEX_MODE_ATTRIBUTELIST,
++    NS_ITEX_MODE_MATHENV,
++    NS_ITEX_MODE_PLAINTEXT,
++    NS_ITEX_MODE_INT1,
++    NS_ITEX_MODE_INT2,
++    NS_ITEX_MODE_INT3,
++    NS_ITEX_MODE_ARRAYOPTIONS,
++    NS_ITEX_MODE_COLOPTS
++  };
++
++  enum nsMathvariant {
++    NS_MATHVARIANT_NORMAL,
++    NS_MATHVARIANT_BBOLD,
++    NS_MATHVARIANT_CALLIGRAPHIC,
++    NS_MATHVARIANT_FRAKTUR
++  };
++
+ public:
+   NS_DECL_NSIMATHPARSER
+   NS_DECL_ISUPPORTS
+ 
+   nsMathParser();
+   virtual ~nsMathParser();
+ 
+ protected:
+@@ -88,16 +120,22 @@ protected:
+   nsIDOMDocument*    mDocument;
+   const PRUnichar*   mCurrentChar;
+   const PRUnichar*   mLastChar;
+   const PRUnichar*   mSavedChar;
+   const PRUnichar*   mStartLine;
+   PRUint32           mLineNumber;
+   PRBool             mError; 
+ 
++  nsMathvariant mMathvariant;
++  nsItexMode    mItexMode;
++  PRUint8       mItexRowPosn;
++  PRPackedBool  mItexDisplayMode;
++  PRPackedBool  mItexEnvStart;
++
+   void
+   SendSyntaxErrorToConsole();
+ 
+   void
+   NewAttribute(const nsAString& aAttrName,
+                const nsAString& aValue,
+                nsIDOMAttr*&     aResult);
+ 
+@@ -155,11 +193,55 @@ protected:
+   void   LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
+   PRBool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
+ 
+   PRBool IsWhiteSpace(PRUnichar c);
+   PRBool TryMatchingMtext(nsIDOMElement*& aResult);
+   void   SkipWhiteSpaces();
+ 
+   PRInt32 SimpleGetNextToken(nsSimpleParserSemanticType *aValue);
++  PRInt32 ItexGetNextToken(nsItexParserSemanticType *aValue);
+ };
+ 
++#define NS_TRY_TOKEN(aName, aElement, aUnicodeValue, aTokenType)        \
++  if (TryMatching(aName)) {                                             \
++    PRUnichar t(aUnicodeValue);                                         \
++    NewTokenElement(aElement,                                           \
++                    nsAutoString(&t, 1), aValue->el);                   \
++    return yy::nsItexParser::token::aTokenType;                         \
++  }                                                                     \
++
++#define NS_TRY_TOKEN2(aName, aElement, aTokenType)                      \
++  if (TryMatching(aName)) {                                             \
++    NewTokenElement(aElement,                                           \
++                    nsAutoString(mSavedChar, 1), aValue->el);           \
++    return yy::nsItexParser::token::aTokenType;                         \
++  }                                                                     \
++
++#define NS_TRY_TOKEN3(aName, aElement, aTokenType)                      \
++  if (TryMatching(aName)) {                                             \
++    NewTokenElement(aElement,                                           \
++                    nsAutoString(mSavedChar,                            \
++                                 mCurrentChar - mSavedChar),            \
++                    aValue->el);                                        \
++    return yy::nsItexParser::token::aTokenType;                         \
++  }                                                                     \
++
++#define NS_TRY_TOKEN4(aName, aElement, aValue1, aValue2, aTokenType)    \
++  if (TryMatching(aName)) {                                             \
++    PRUnichar t[] = {aValue1, aValue2};                                 \
++    NewTokenElement(aElement,                                           \
++                    nsAutoString(t, 2), aValue->el);                    \
++    return yy::nsItexParser::token::aTokenType;                         \
++  }                                                                     \
++
++#define NS_TRY_EMPTY(aName, aTokenType)                                 \
++  if (TryMatching(aName)) {                                             \
++    return yy::nsItexParser::token::aTokenType;                         \
++  }                                                                     \
++
++#define NS_TRY_EMPTY_WITH_ACTION(aName, aAction, aTokenType)            \
++  if (TryMatching(aName)) {                                             \
++    aAction;                                                            \
++    return yy::nsItexParser::token::aTokenType;                         \
++  }                                                                     \
++
+ #endif // nsMathParser_h__
