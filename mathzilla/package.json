@@ -1,0 +1,12 @@
+{
+  "name" : "mathzilla",
+  "fullName": "Mathzilla",
+  "description": "Several MathML related features for Mozilla", 
+  "author": "Frédéric Wang",
+  "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+  "id": "jid0-08fTEFT2bcLlxqfVHCp5nTPzMh0", 
+  "version" : "0.1",
+  "dependencies": [
+      "addon-kit"
+  ]
+}
