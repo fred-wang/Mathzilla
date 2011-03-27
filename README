@@ -1,3 +1,20 @@
+********************************************************************************
+xpi
+********************************************************************************
+
+This directory contains packaged add-on files:
+
+- mathparser-0.1.xpi (Linux only)
+- mathzilla-0.1.xpi
+
+See http://www.maths-informatique-jeux.com/blog/frederic/?post/2010/11/14/Mozilla-MathML-Add-ons
+
+********************************************************************************
+mathparser
+********************************************************************************
+
+This is a set of patches to add a mathparser extension to mozilla-central.
+
 I) Install GNU bison if it is not present on your system.
   http://www.gnu.org/software/bison/
 
@@ -7,7 +24,6 @@ II) Apply these patches to your sources from mozilla-central:
   2 A mathparser-dictionary.diff
   3 A mathparser-simple.diff
   4 A mathparser-itex.diff
-  (patches from bug 534970 may also be useful)
 
 III) Enable the mathparser extension:
   ac_add_options --enable-extensions=default,mathparser
@@ -17,8 +33,6 @@ IV) Compile Mozilla
 V) Once the build is complete, you should have mathparser available in the
 add-on menu. You should also find an XPI in your objdir:
   dist/xpi-stage/mathparser.xpi 
-
-********************************************************************************
 
 You can test the parser with mathzilla-parser.xhtml
 
@@ -39,3 +53,22 @@ The idl interface of nsIMathParser is:
   nsIDOMElement parse(in nsIDOMDocument aDocument,
                       in AString        aString);
 
+********************************************************************************
+mathzilla
+********************************************************************************
+
+Sources for the mathzilla add-on.
+This is experimental, I need to update them to be compatible with future
+versions of Mozilla Add-on SDK.
+
+********************************************************************************
+operatorDictionary.xsl
+********************************************************************************
+
+This is an XSLT Stylesheet to help updating your MathML Operator Dictionary.
+Basic usage is:
+
+wget http://www.w3.org/2003/entities/2007xml/unicode.xml
+xsltproc -o dictionary.xml operatorDictionary.xsl unicode.xml
+
+See http://www.maths-informatique-jeux.com/blog/frederic/?post/2010/06/14/XSLT-Stylesheet-to-help-updating-the-MathML-Operator-Dictionary
