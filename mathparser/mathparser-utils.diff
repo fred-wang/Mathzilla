@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 4b412d52dba97ff005cd072f8782959e0832c255
+# Parent 5c93792e25e6655dc3df728af8d8a0477ae6456d
 # Add basic functionalities to help writing parsers
 
 diff --git a/extensions/mathparser/src/nsMathMLNames.h b/extensions/mathparser/src/nsMathMLNames.h
@@ -279,7 +279,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  nsMathParser::GetSplitMiTokens(PRBool *aSplitMiTokens)
  {
    *aSplitMiTokens = mSplitMiTokens;
-@@ -89,15 +95,496 @@ nsMathParser::GetSplitMiTokens(PRBool *a
+@@ -89,15 +95,502 @@ nsMathParser::GetSplitMiTokens(PRBool *a
  
  NS_IMETHODIMP
  nsMathParser::SetSplitMiTokens(PRBool aSplitMiTokens)
@@ -494,7 +494,8 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +nsMathParser::IsDigit(PRUnichar c)
 +{ 
 +  return ((PRUnichar('0') <= c && c <= PRUnichar('9')) ||
-+          (PRUnichar(0x0660) <= c && c <= PRUnichar(0x0669)) // arabic digits
++          (PRUnichar(0x0660) <= c && c <= PRUnichar(0x0669)) || // arabic
++          (PRUnichar(0x06F0) <= c && c <= PRUnichar(0x06F9))    // arabic
 +          );
 +}
 +
@@ -576,7 +577,12 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +          (PRUnichar(0x0370) <= c && c <= PRUnichar(0x03FF)) ||
 +
 +          // Greek Extended
-+          (PRUnichar(0x1F00) <= c && c <= PRUnichar(0x1FFF))
++          (PRUnichar(0x1F00) <= c && c <= PRUnichar(0x1FFF)) ||
++
++          // Arabic
++          (PRUnichar(0x0620) <= c && c <= PRUnichar(0x063F)) ||
++          (PRUnichar(0x0641) <= c && c <= PRUnichar(0x064A)) ||
++          (PRUnichar(0x066E) <= c && c <= PRUnichar(0x06D3))
 +          );
 +}
 +
