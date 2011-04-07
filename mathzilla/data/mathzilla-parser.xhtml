@@ -68,6 +68,8 @@ function parse(mode) {
   mathparser.parsingMode = (mode == 0 ?
     Components.interfaces.nsIMathParser.MATHPARSER_MODE_SIMPLE :
     Components.interfaces.nsIMathParser.MATHPARSER_MODE_ITEX);
+  mathparser.reportErrors = false;
+  mathparser.splitMiTokens = false;
 
   var node = mathparser.parse(document, text);
   output.appendChild(node);
@@ -79,7 +81,7 @@ function parse(mode) {
 
 <body>
 
-<textarea id="input" rows="10" cols="80"/>
+<textarea dir="rtl" id="input" rows="10" cols="80"/>
 
 <p><input type="button" onclick="parse(0)" value="Parse (Simple Mode)"/>
    <input type="button" onclick="parse(1)" value="Parse (Itex Mode)"/></p>
