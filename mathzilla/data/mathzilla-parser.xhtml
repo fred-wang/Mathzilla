@@ -42,7 +42,22 @@
   <title>Mathzilla Parser</title>
 <script type="text/javascript">
 <![CDATA[
-function parse(mode) {
+var gDirectionalityRTL = false;
+
+function switchDir()
+{
+  var textarea = document.getElementById("input");
+  if (gDirectionalityRTL) {
+    textarea.removeAttribute("dir");
+    gDirectionalityRTL = false;
+  } else {
+    textarea.dir = "rtl";
+    gDirectionalityRTL = true;
+  }
+}
+
+function parse(mode)
+{
   // remove the previous result
   var output = document.getElementById("output");
   if (output.hasChildNodes()) {
@@ -68,10 +83,12 @@ function parse(mode) {
   mathparser.parsingMode = (mode == 0 ?
     Components.interfaces.nsIMathParser.MATHPARSER_MODE_SIMPLE :
     Components.interfaces.nsIMathParser.MATHPARSER_MODE_ITEX);
-  mathparser.reportErrors = false;
-  mathparser.splitMiTokens = false;
 
   var node = mathparser.parse(document, text);
+
+  if (gDirectionalityRTL) {
+    node.setAttribute("dir", "rtl");
+  }
   output.appendChild(node);
 }
 ]]>
@@ -81,10 +98,12 @@ function parse(mode) {
 
 <body>
 
-<textarea dir="rtl" id="input" rows="10" cols="80"/>
+<textarea id="input" rows="10" cols="80"/>
 
-<p><input type="button" onclick="parse(0)" value="Parse (Simple Mode)"/>
-   <input type="button" onclick="parse(1)" value="Parse (Itex Mode)"/></p>
+<p><input type="button" onclick="switchDir()" value="Switch Directionality"/>
+   <input type="button" onclick="parse(0)" value="Parse (Simple Mode)"/>
+   <input type="button" onclick="parse(1)" value="Parse (Itex Mode)"/>
+   </p>
 
 <div id="output"/>
 
