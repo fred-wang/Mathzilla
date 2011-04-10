@@ -1,12 +1,12 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 84034146670ce04062981e930341691edf0cb184
+# Parent 4f012b0d3de41059826e553522b7396182e8f134
 # Base patch to prepare integration of mathparser
 
 diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 --- a/config/autoconf.mk.in
 +++ b/config/autoconf.mk.in
-@@ -435,16 +435,17 @@ ZIP		= @ZIP@
+@@ -431,16 +431,17 @@ ZIP		= @ZIP@
  XARGS		= @XARGS@
  STRIP		= @STRIP@
  DOXYGEN		= @DOXYGEN@
@@ -27,13 +27,13 @@ diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 diff --git a/configure.in b/configure.in
 --- a/configure.in
 +++ b/configure.in
-@@ -6615,16 +6615,25 @@ if test `echo "$MOZ_EXTENSIONS" | grep -
-     MOZ_EXTENSIONS=`echo $MOZ_EXTENSIONS | sed -e 's|java||g'`
+@@ -6499,16 +6499,25 @@ if test -z "$MOZ_JSDEBUGGER" -a `echo "$
  fi
  
- if test `echo "$MOZ_EXTENSIONS" | grep -c spellcheck` -ne 0; then
-     AC_MSG_WARN([spellcheck is no longer an extension.])
-     MOZ_EXTENSIONS=`echo $MOZ_EXTENSIONS | sed -e 's|spellcheck||g'`
+ dnl xforms requires xtf
+ if test -z "$MOZ_XTF" -a `echo "$MOZ_EXTENSIONS" | grep -c xforms` -ne 0; then
+     AC_MSG_WARN([Cannot build XForms without XTF support.  Removing XForms from MOZ_EXTENSIONS.])
+     MOZ_EXTENSIONS=`echo $MOZ_EXTENSIONS | sed -e 's|xforms||g'`
  fi
  
 +dnl mathparser requires bison
