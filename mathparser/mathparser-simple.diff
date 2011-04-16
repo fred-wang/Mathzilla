@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 06fba8d388ef2e296575fdb101650b0450631c02
+# Parent 874ce84d9c6c8bf41389becf695420a11d1522c1
 # Add a simple mode to mathparser
 
 diff --git a/extensions/mathparser/src/Makefile.in b/extensions/mathparser/src/Makefile.in
@@ -245,7 +245,7 @@ diff --git a/extensions/mathparser/src/nsSimpleParser.ypp b/extensions/mathparse
 new file mode 100644
 --- /dev/null
 +++ b/extensions/mathparser/src/nsSimpleParser.ypp
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,235 @@
 +/* -*- Mode: C++; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
 +/* ***** BEGIN LICENSE BLOCK *****
 + * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -309,12 +309,11 @@ new file mode 100644
 +yy::nsSimpleParser::error (const yy::nsSimpleParser::location_type& l,
 +                           const std::string& m)
 +{
-+  // XXXfred: nsSimpleParser always sends an error... why?
-+  //  aMathParser.SendSyntaxErrorToConsole();
++  aMathParser.SendSyntaxErrorToConsole();
 +}
 +%}
 +
-+%token<empty> END
++%token<empty> END 0
 +%token<el>    MI MN MTEXT MS
 +%token<el>    MO MO_OPEN MO_CLOSE MO_OPEN_BRACKET MO_CLOSE_BRACKET
 +%token<el>    MO_OPEN_BRACE MO_CLOSE_BRACE
