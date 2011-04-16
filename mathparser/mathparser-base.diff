@@ -1,12 +1,12 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 4f012b0d3de41059826e553522b7396182e8f134
+# Parent 6f670a35c89a2e2c3e6890cfc735d4d425d3005b
 # Base patch to prepare integration of mathparser
 
 diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 --- a/config/autoconf.mk.in
 +++ b/config/autoconf.mk.in
-@@ -431,16 +431,17 @@ ZIP		= @ZIP@
+@@ -432,16 +432,17 @@ ZIP		= @ZIP@
  XARGS		= @XARGS@
  STRIP		= @STRIP@
  DOXYGEN		= @DOXYGEN@
@@ -27,7 +27,7 @@ diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 diff --git a/configure.in b/configure.in
 --- a/configure.in
 +++ b/configure.in
-@@ -6499,16 +6499,25 @@ if test -z "$MOZ_JSDEBUGGER" -a `echo "$
+@@ -6511,16 +6511,25 @@ if test -z "$MOZ_JSDEBUGGER" -a `echo "$
  fi
  
  dnl xforms requires xtf
@@ -118,7 +118,7 @@ diff --git a/extensions/mathparser/install.rdf b/extensions/mathparser/install.r
 new file mode 100644
 --- /dev/null
 +++ b/extensions/mathparser/install.rdf
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,68 @@
 +<?xml version="1.0" encoding="utf-8"?>
 +<!-- -*- Mode: xml; tab-width: 2; indent-tabs-mode:nil; -->
 +<!-- vim: set ts=2 et sw=2 tw=80: -->
@@ -163,11 +163,21 @@ new file mode 100644
 +    <em:id>mathparser@mozilla.com</em:id>
 +    <em:version>0.1</em:version>
 +	
++    <!-- Firefox -->
 +    <em:targetApplication>
 +      <Description>
-+        <em:id>toolkit@mozilla.org</em:id>
-+        <em:minVersion>1.9.3</em:minVersion>
-+        <em:maxVersion>2.0+</em:maxVersion>
++        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
++        <em:minVersion>4.0b1</em:minVersion>
++        <em:maxVersion>6.0a1</em:maxVersion>
++      </Description>
++    </em:targetApplication>
++
++    <!-- Fennec -->
++    <em:targetApplication>
++      <Description>
++        <em:id>{a23983c0-fd0e-11dc-95ff-0800200c9a66}</em:id>
++        <em:minVersion>4.0b1pre</em:minVersion>
++        <em:maxVersion>6.0a1</em:maxVersion>
 +      </Description>
 +    </em:targetApplication>
 +
@@ -177,6 +187,7 @@ new file mode 100644
 +    <em:creator>Frédéric Wang</em:creator>
 +  </Description>
 +</RDF>
+\ No newline at end of file
 diff --git a/extensions/mathparser/public/Makefile.in b/extensions/mathparser/public/Makefile.in
 new file mode 100644
 --- /dev/null
