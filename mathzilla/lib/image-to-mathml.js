@@ -47,6 +47,8 @@ exports.transform = function(aDocument, aImg, aForce) {
       
         /^((.|\n)*)\.(png|gif|jpg|svg)$/.test(text) || // image name
 
+        /^play$/.test(text) || // "image play of wikipedia"
+
         // at least 5 characters without special math operators
         /^(\s*)[^\\\+\-\(\)\[\]\$\{\}\.\|\^\*,/;!=<>]{5,}(\s*)$/.test(text)) {
       return false;
@@ -65,8 +67,8 @@ exports.transform = function(aDocument, aImg, aForce) {
       }
     }
 	  
-  //    var mathparser = Components.classes["@mozilla.org/mathzilla/mathparser;1"].
-  //      getService(Components.interfaces.nsIMathParser);
+    var mathparser = Components.classes["@mozilla.org/mathzilla/mathparser;1"].
+      getService(Components.interfaces.nsIMathParser);
 
     mathparser.parsingMode   = mathparser.MATHPARSER_MODE_ITEX;
     mathparser.splitMiTokens = true;

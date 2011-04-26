@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 0439b135bd86c050688892aabe404c5ec3a95e35
+# Parent 7f253db60c39b63cca4b04333923542bd48ed080
 # Add itex mode to mathparser
 
 diff --git a/extensions/mathparser/src/Makefile.in b/extensions/mathparser/src/Makefile.in
@@ -1726,7 +1726,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  void
  nsMathParser::NewMathMLElement(const nsAString& aTagName,
                                 nsIDOMElement*&  aResult)
-@@ -693,8 +808,1215 @@ nsMathParser::SimpleGetNextToken(nsSimpl
+@@ -699,8 +814,1218 @@ nsMathParser::SimpleGetNextToken(nsSimpl
    }
  
    if (TryMatchingMtext(aValue->el)) {
@@ -2240,6 +2240,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +        NS_TRY_EMPTY(NS_LITERAL_STRING("medspace"), MEDSPACE)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("measuredangle"),
 +                     kElementMo, 0x2221, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("mbox"), EMPTYMROW)
 +        NS_TRY_TOKEN3(NS_LITERAL_STRING("max"), kElementMi, MIB)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("mapsto"), kElementMo, 0x21A6, MOL)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("map"), kElementMo, 0x21A6, MOL)
@@ -2640,6 +2641,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +                     kElementMo, 0x21A9, MOL)
 +        NS_TRY_TOKEN3(NS_LITERAL_STRING("hom"), kElementMi, MI)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("heartsuit"), kElementMo, 0x2661, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("hbox"), EMPTYMROW)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("hbar"), kElementMi, 0x210F, MI)
 +        NS_TRY_EMPTY(NS_LITERAL_STRING("hat"), HAT)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("frown"), kElementMo, 0x2322, MOL)
@@ -2649,6 +2651,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +        NS_TRY_EMPTY(NS_LITERAL_STRING("frac"), FRAC)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("forall"), kElementMo, 0x2200, MOL)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("flat"), kElementMo, 0x266D, MOL)
++        NS_TRY_EMPTY(NS_LITERAL_STRING("fbox"), BOXED)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("fallingdotseq"),
 +                     kElementMo, 0x2252, MOL)
 +      } else if (PRUnichar('A') <= *mCurrentChar &&
