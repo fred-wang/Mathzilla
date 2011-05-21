@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent b1f71b32b53cca2d8c0bd9c013ae3b8153bdfd24
+# Parent 13999c145b2f9cc8511c087853a4eb1a98b94260
 # Add unit tests to mathparser
 
 diff --git a/extensions/mathparser/Makefile.in b/extensions/mathparser/Makefile.in
@@ -1048,3 +1048,45 @@ new file mode 100644
 +  mathparserCompare("itex-arrays.xml",
 +                    "itex-arrays.txt", kModeItex);
 +}
+diff --git a/extensions/mathparser/tests/unit/xpcshell.ini b/extensions/mathparser/tests/unit/xpcshell.ini
+new file mode 100644
+--- /dev/null
++++ b/extensions/mathparser/tests/unit/xpcshell.ini
+@@ -0,0 +1,6 @@
++[DEFAULT]
++head = head_mathparser.js
++tail =
++
++[test_mathparser.js]
++
+diff --git a/testing/xpcshell/xpcshell.ini b/testing/xpcshell/xpcshell.ini
+--- a/testing/xpcshell/xpcshell.ini
++++ b/testing/xpcshell/xpcshell.ini
+@@ -1,8 +1,9 @@
++
+ [include:chrome/test/unit/xpcshell.ini]
+ [include:intl/locale/tests/unit/xpcshell.ini]
+ [include:netwerk/cookie/test/unit/xpcshell.ini]
+ [include:modules/libjar/zipwriter/test/unit/xpcshell.ini]
+ [include:uriloader/exthandler/tests/unit/xpcshell.ini]
+ [include:parser/xml/test/unit/xpcshell.ini]
+ [include:modules/libpr0n/test/unit/xpcshell.ini]
+ [include:modules/plugin/test/unit/xpcshell.ini]
+@@ -64,16 +65,17 @@
+ [include:browser/components/places/tests/unit/xpcshell.ini]
+ [include:browser/components/privatebrowsing/test/unit/xpcshell.ini]
+ [include:browser/components/shell/test/unit/xpcshell.ini]
+ [include:extensions/spellcheck/hunspell/tests/unit/xpcshell.ini]
+ [include:toolkit/components/search/tests/xpcshell/xpcshell.ini]
+ [include:toolkit/mozapps/shared/test/unit/xpcshell.ini]
+ [include:services/crypto/component/tests/unit/xpcshell.ini]
+ [include:layout/tools/layout-debug/tests/unit/xpcshell.ini]
++[include:extensions/mathparser/tests/unit/xpcshell.ini]
+ run-if.config = debug
+ 
+ [include:intl/locale/tests_multilocale/unit/xpcshell.ini]
+ run-if.toolkit = windows
+ 
+ [include:intl/locale/tests_multilocale/unit/xpcshell.ini]
+ run-if.toolkit = cocoa
+ 
