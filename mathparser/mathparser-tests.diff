@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 13999c145b2f9cc8511c087853a4eb1a98b94260
+# Parent ac9e4f2fd99a267c40a77203d0910a679b36489e
 # Add unit tests to mathparser
 
 diff --git a/extensions/mathparser/Makefile.in b/extensions/mathparser/Makefile.in
@@ -1082,11 +1082,11 @@ diff --git a/testing/xpcshell/xpcshell.ini b/testing/xpcshell/xpcshell.ini
  [include:services/crypto/component/tests/unit/xpcshell.ini]
  [include:layout/tools/layout-debug/tests/unit/xpcshell.ini]
 +[include:extensions/mathparser/tests/unit/xpcshell.ini]
- run-if.config = debug
+ skip-if = !debug
  
- [include:intl/locale/tests_multilocale/unit/xpcshell.ini]
- run-if.toolkit = windows
+ [include:toolkit/crashreporter/test/unit/xpcshell.ini]
+ skip-if = os == "linux" || !crashreporter
  
- [include:intl/locale/tests_multilocale/unit/xpcshell.ini]
- run-if.toolkit = cocoa
- 
+ #XXX: we don't actually set os = maemo
+ [include:toolkit/crashreporter/client/maemo-unit/xpcshell.ini]
+ run-if = os == "maemo"
