@@ -83,7 +83,7 @@ new file mode 100644
 +static PRInt32  gTableRefCount = 0;
 +static PRUint32 gOperatorCount = 0;
 +static nsDataHashtable<nsStringHashKey, nsOperatorFlags> *gOperatorTable;
-+static PRBool gInitialized   = PR_FALSE;
++static bool gInitialized   = PR_FALSE;
 +
 +#define kNotFound -1
 +static const PRUnichar kNullCh  = PRUnichar('\0');
@@ -103,7 +103,7 @@ new file mode 100644
 +    *aOperatorFlags |= NS_MATHML_OPERATOR_MOVABLELIMITS;
 +}
 +
-+static PRBool
++static bool
 +SetOperator(nsOperatorFlags  aForm,
 +            const nsCString& aOperator,
 +            nsString&        aAttributes)
@@ -183,7 +183,7 @@ new file mode 100644
 +      ++end;
 +    }
 +    // If ':' is not found, then it's a boolean property
-+    PRBool IsBooleanProperty = (kColonCh != *end);
++    bool IsBooleanProperty = (kColonCh != *end);
 +    *end = kNullCh; // end segment here
 +    // this segment is the name
 +    if (start < end) {
@@ -212,7 +212,7 @@ new file mode 100644
 +static nsresult
 +InitOperators(void)
 +{
-+  PRBool tableInitialized = PR_FALSE;
++  bool tableInitialized = PR_FALSE;
 +
 +  // Load the property file containing the Operator Dictionary
 +  nsresult rv;
@@ -227,7 +227,7 @@ new file mode 100644
 +  for (PRInt32 pass = 1; pass <= 2; pass++) {
 +    nsCOMPtr<nsISimpleEnumerator> iterator;
 +    if (NS_SUCCEEDED(mathfontProp->Enumerate(getter_AddRefs(iterator)))) {
-+      PRBool more;
++      bool more;
 +      PRUint32 index = 0;
 +      nsCAutoString name;
 +      nsAutoString attributes;
@@ -315,7 +315,7 @@ new file mode 100644
 +  }
 +}
 +
-+static PRBool
++static bool
 +GetOperatorData(const nsString& aOperator,
 +                nsOperatorFlags &aFlag)
 +{

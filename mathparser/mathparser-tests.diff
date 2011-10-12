@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent ac9e4f2fd99a267c40a77203d0910a679b36489e
+# Parent fcb3078e0a8266d23f30f868782037aa2fc7dcb0
 # Add unit tests to mathparser
 
 diff --git a/extensions/mathparser/Makefile.in b/extensions/mathparser/Makefile.in
@@ -1071,8 +1071,8 @@ diff --git a/testing/xpcshell/xpcshell.ini b/testing/xpcshell/xpcshell.ini
  [include:uriloader/exthandler/tests/unit/xpcshell.ini]
  [include:parser/xml/test/unit/xpcshell.ini]
  [include:modules/libpr0n/test/unit/xpcshell.ini]
- [include:modules/plugin/test/unit/xpcshell.ini]
-@@ -64,16 +65,17 @@
+ [include:dom/plugins/test/unit/xpcshell.ini]
+@@ -68,16 +69,17 @@ skip-if = os == "android"
  [include:browser/components/places/tests/unit/xpcshell.ini]
  [include:browser/components/privatebrowsing/test/unit/xpcshell.ini]
  [include:browser/components/shell/test/unit/xpcshell.ini]
@@ -1087,6 +1087,6 @@ diff --git a/testing/xpcshell/xpcshell.ini b/testing/xpcshell/xpcshell.ini
  [include:toolkit/crashreporter/test/unit/xpcshell.ini]
  skip-if = os == "linux" || !crashreporter
  
- #XXX: we don't actually set os = maemo
- [include:toolkit/crashreporter/client/maemo-unit/xpcshell.ini]
- run-if = os == "maemo"
+ [include:toolkit/crashreporter/test/unit_ipc/xpcshell.ini]
+ skip-if.os == "linux" || !crashreporter
+ 

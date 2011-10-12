@@ -228,14 +228,14 @@ diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/sr
  
  protected:
 @@ -140,11 +153,13 @@ protected:
-   PRBool TryMatchingMs(nsIDOMElement*& aResult);
+   bool TryMatchingMs(nsIDOMElement*& aResult);
  
-   void   LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
-   PRBool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
+   void LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
+   bool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
  
-   PRBool IsWhiteSpace(PRUnichar c);
-   PRBool TryMatchingMtext(nsIDOMElement*& aResult);
-   void   SkipWhiteSpaces();
+   bool IsWhiteSpace(PRUnichar c);
+   bool TryMatchingMtext(nsIDOMElement*& aResult);
+   void SkipWhiteSpaces();
 +
 +  PRInt32 SimpleGetNextToken(nsSimpleParserSemanticType *aValue);
  };

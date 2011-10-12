@@ -3017,7 +3017,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/sr
    const PRUnichar*   mSavedChar;
    const PRUnichar*   mStartLine;
    PRUint32           mLineNumber;
-   PRBool             mError; 
+   bool             mError; 
  
 +  nsMathvariant mMathvariant;
 +  nsItexMode    mItexMode;
@@ -3034,12 +3034,12 @@ diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/sr
                 nsIDOMAttr*&     aResult);
  
 @@ -155,11 +193,55 @@ protected:
-   void   LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
-   PRBool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
+   void LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
+   bool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
  
-   PRBool IsWhiteSpace(PRUnichar c);
-   PRBool TryMatchingMtext(nsIDOMElement*& aResult);
-   void   SkipWhiteSpaces();
+   bool IsWhiteSpace(PRUnichar c);
+   bool TryMatchingMtext(nsIDOMElement*& aResult);
+   void SkipWhiteSpaces();
  
    PRInt32 SimpleGetNextToken(nsSimpleParserSemanticType *aValue);
 +  PRInt32 ItexGetNextToken(nsItexParserSemanticType *aValue);

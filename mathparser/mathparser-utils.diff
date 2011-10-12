@@ -259,14 +259,14 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  }
  
  NS_IMETHODIMP
- nsMathParser::GetReportErrors(PRBool *aReportErrors)
+ nsMathParser::GetReportErrors(bool *aReportErrors)
  {
    *aReportErrors = mReportErrors;
    return NS_OK;
  }
  
  NS_IMETHODIMP
- nsMathParser::SetReportErrors(PRBool aReportErrors)
+ nsMathParser::SetReportErrors(bool aReportErrors)
  {
 +  if (!mConsoleService && aReportErrors) {
 +    mConsoleService = do_GetService("@mozilla.org/consoleservice;1");
@@ -276,13 +276,13 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  }
  
  NS_IMETHODIMP
- nsMathParser::GetSplitMiTokens(PRBool *aSplitMiTokens)
+ nsMathParser::GetSplitMiTokens(bool *aSplitMiTokens)
  {
    *aSplitMiTokens = mSplitMiTokens;
-@@ -89,15 +95,502 @@ nsMathParser::GetSplitMiTokens(PRBool *a
+@@ -89,15 +95,502 @@ nsMathParser::GetSplitMiTokens(bool *a
  
  NS_IMETHODIMP
- nsMathParser::SetSplitMiTokens(PRBool aSplitMiTokens)
+ nsMathParser::SetSplitMiTokens(bool aSplitMiTokens)
  {
    mSplitMiTokens = aSplitMiTokens;
    return NS_OK;
@@ -456,7 +456,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  delete aArray;
 +}
 +////////////////////////////////////////////////////////////////////////////////
-+PRBool
++bool
 +nsMathParser::TryMatching(PRUnichar c)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -469,7 +469,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_TRUE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::TryMatching(const nsAString& aString)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -490,7 +490,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_TRUE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::IsDigit(PRUnichar c)
 +{ 
 +  return ((PRUnichar('0') <= c && c <= PRUnichar('9')) ||
@@ -499,7 +499,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +          );
 +}
 +
-+PRBool
++bool
 +nsMathParser::IsNumberSeparator(PRUnichar c)
 +{
 +  return (c == PRUnichar('.') ||
@@ -508,7 +508,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +          );
 +}
 +
-+PRBool
++bool
 +nsMathParser::TryMatchingMn(nsIDOMElement*& aResult)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -523,7 +523,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +      return PR_FALSE;
 +    }
 +    // Move the pointer until we no longer have a digit or a number separator
-+    PRBool sepFound = PR_FALSE;
++    bool sepFound = PR_FALSE;
 +    for (p = mCurrentChar + 1; p < mLastChar; p++) {
 +      // ensure that the number contains at most one separator
 +      if (IsNumberSeparator(*p)) {
@@ -550,7 +550,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_TRUE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::IsLetter(PRUnichar c)
 +{
 +  return (// Basic Latin 
@@ -586,7 +586,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +          );
 +}
 +
-+PRBool
++bool
 +nsMathParser::TryMatchingMi(nsIDOMElement*& aResult)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -614,7 +614,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_TRUE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::IsOpeningQuote(PRUnichar c)
 +{
 +  return (c == PRUnichar(0x0022) ||
@@ -624,7 +624,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +          c == PRUnichar(0x2018));
 +}
 +
-+PRBool
++bool
 +nsMathParser::IsClosingQuoteOf(PRUnichar c, PRUnichar open)
 +{
 +  if (open == PRUnichar(0x0022)) {
@@ -645,7 +645,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_FALSE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::TryMatchingMs(nsIDOMElement*& aResult)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -688,7 +688,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_TRUE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -740,7 +740,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  return PR_FALSE;
 +}
 +
-+PRBool
++bool
 +nsMathParser::IsWhiteSpace(PRUnichar c)
 +{
 +  return (c == PRUnichar(' ') ||
@@ -749,7 +749,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +          c == PRUnichar('\r'));
 +}
 +
-+PRBool
++bool
 +nsMathParser::TryMatchingMtext(nsIDOMElement*& aResult)
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
@@ -815,8 +815,8 @@ diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/sr
  
  protected:
    MathParserMode mParsingMode;
-   PRBool         mReportErrors;
-   PRBool         mSplitMiTokens;
+   bool         mReportErrors;
+   bool         mSplitMiTokens;
 +
 +  nsCOMPtr<nsIConsoleService> mConsoleService;
 +
@@ -826,7 +826,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/sr
 +  const PRUnichar*   mSavedChar;
 +  const PRUnichar*   mStartLine;
 +  PRUint32           mLineNumber;
-+  PRBool             mError; 
++  bool             mError; 
 +
 +  void
 +  SendSyntaxErrorToConsole();
@@ -869,30 +869,30 @@ diff --git a/extensions/mathparser/src/nsMathParser.h b/extensions/mathparser/sr
 +  DeleteArrayOfAttributes(nsTArray<nsIDOMAttr*>* aArray);
 +
 +  PRUint32  RemainingChars() { return mLastChar - mCurrentChar; }
-+  PRBool    IsEndOfBuffer()  { return mLastChar == mCurrentChar; }
-+  void      SaveCharPos() { mSavedChar = mCurrentChar; }
-+  void      GoBackToSavedChar() { mCurrentChar = mSavedChar; }
++  bool IsEndOfBuffer()  { return mLastChar == mCurrentChar; }
++  void SaveCharPos() { mSavedChar = mCurrentChar; }
++  void GoBackToSavedChar() { mCurrentChar = mSavedChar; }
 +
-+  PRBool TryMatching(PRUnichar c);
-+  PRBool TryMatching(const nsAString& aString);
++  bool TryMatching(PRUnichar c);
++  bool TryMatching(const nsAString& aString);
 +
-+  PRBool IsDigit(PRUnichar c);
-+  PRBool IsNumberSeparator(PRUnichar c);
-+  PRBool TryMatchingMn(nsIDOMElement*& aResult);
++  bool IsDigit(PRUnichar c);
++  bool IsNumberSeparator(PRUnichar c);
++  bool TryMatchingMn(nsIDOMElement*& aResult);
 +
-+  PRBool IsLetter(PRUnichar c);
-+  PRBool TryMatchingMi(nsIDOMElement*& aResult);
++  bool IsLetter(PRUnichar c);
++  bool TryMatchingMi(nsIDOMElement*& aResult);
 +
-+  PRBool IsOpeningQuote(PRUnichar c);
-+  PRBool IsClosingQuoteOf(PRUnichar c, PRUnichar open);
-+  PRBool TryMatchingMs(nsIDOMElement*& aResult);
++  bool IsOpeningQuote(PRUnichar c);
++  bool IsClosingQuoteOf(PRUnichar c, PRUnichar open);
++  bool TryMatchingMs(nsIDOMElement*& aResult);
 +
-+  void   LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
-+  PRBool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
++  void LookupOperator(const nsString& aOperator, nsOperatorFlags& aFlags);
++  bool TryMatchingMo(nsOperatorFlags& aFlags, nsIDOMElement*& aResult);
 +
-+  PRBool IsWhiteSpace(PRUnichar c);
-+  PRBool TryMatchingMtext(nsIDOMElement*& aResult);
-+  void   SkipWhiteSpaces();
++  bool IsWhiteSpace(PRUnichar c);
++  bool TryMatchingMtext(nsIDOMElement*& aResult);
++  void SkipWhiteSpaces();
  };
  
  #endif // nsMathParser_h__

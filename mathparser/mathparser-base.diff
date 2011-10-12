@@ -460,28 +460,28 @@ new file mode 100644
 +}
 +
 +NS_IMETHODIMP
-+nsMathParser::GetReportErrors(PRBool *aReportErrors)
++nsMathParser::GetReportErrors(bool *aReportErrors)
 +{
 +  *aReportErrors = mReportErrors;
 +  return NS_OK;
 +}
 +
 +NS_IMETHODIMP
-+nsMathParser::SetReportErrors(PRBool aReportErrors)
++nsMathParser::SetReportErrors(bool aReportErrors)
 +{
 +  mReportErrors = aReportErrors;
 +  return NS_OK;
 +}
 +
 +NS_IMETHODIMP
-+nsMathParser::GetSplitMiTokens(PRBool *aSplitMiTokens)
++nsMathParser::GetSplitMiTokens(bool *aSplitMiTokens)
 +{
 +  *aSplitMiTokens = mSplitMiTokens;
 +  return NS_OK;
 +}
 +
 +NS_IMETHODIMP
-+nsMathParser::SetSplitMiTokens(PRBool aSplitMiTokens)
++nsMathParser::SetSplitMiTokens(bool aSplitMiTokens)
 +{
 +  mSplitMiTokens = aSplitMiTokens;
 +  return NS_OK;
@@ -560,8 +560,8 @@ new file mode 100644
 +
 +protected:
 +  MathParserMode mParsingMode;
-+  PRBool         mReportErrors;
-+  PRBool         mSplitMiTokens;
++  bool         mReportErrors;
++  bool         mSplitMiTokens;
 +};
 +
 +#endif // nsMathParser_h__
