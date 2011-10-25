@@ -56,11 +56,11 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
  
  nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
-   mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+   mReportErrors(true), mSplitMiTokens(false), mConsoleService(nsnull)
 @@ -143,17 +144,18 @@ nsMathParser::Parse(nsIDOMDocument*  aDo
    mLineNumber = 1;
    mStartLine = mCurrentChar; 
-   mError = PR_FALSE;
+   mError = false;
    mDocument = aDocument;
  
    switch(mParsingMode) {

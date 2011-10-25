@@ -437,7 +437,7 @@ new file mode 100644
 +NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
 +
 +nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
-+  mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE)
++  mReportErrors(true), mSplitMiTokens(false)
 +{
 +}
 +

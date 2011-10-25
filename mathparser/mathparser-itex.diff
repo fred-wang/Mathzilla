@@ -1562,7 +1562,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
  
  nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
-   mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+   mReportErrors(true), mSplitMiTokens(false), mConsoleService(nsnull)
 @@ -140,28 +142,35 @@ nsMathParser::Parse(nsIDOMDocument*  aDo
    mCurrentChar = aString.BeginReading();
    mLastChar = aString.EndReading();
@@ -1570,7 +1570,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
    // Initialize parameters
    mLineNumber = 1;
    mStartLine = mCurrentChar; 
-   mError = PR_FALSE;
+   mError = false;
    mDocument = aDocument;
 +  mMathvariant = NS_MATHVARIANT_NORMAL;
  
@@ -1589,7 +1589,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +      mItexMode = NS_ITEX_MODE_NORMAL;
 +      mItexRowPosn = 0;
 +      mItexDisplayMode = 0;
-+      mItexEnvStart = PR_FALSE;
++      mItexEnvStart = false;
 +      parser.parse();
        break;
 +    }    
@@ -1977,7 +1977,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("beth"), kElementMi, 0x2136, MI)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("beta"), kElementMi, 0x3B2, MI)
 +        NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("begin"),
-+                                 mItexEnvStart = PR_TRUE;
++                                 mItexEnvStart = true;
 +                                 mItexMode = NS_ITEX_MODE_MATHENV, BEGINENV)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("because"), kElementMo, 0x2235, MOL)
 +        NS_TRY_TOKEN(NS_LITERAL_STRING("barwedge"), kElementMo, 0x2305, MOL)
@@ -2802,37 +2802,37 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +
 +  case NS_ITEX_MODE_MATHENV:
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{matrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, MATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{pmatrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, PMATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{bmatrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, BMATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{Bmatrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, BBMATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{vmatrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, VMATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{Vmatrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, VVMATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{smallmatrix}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, SMALLMATRIX)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{cases}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, CASES)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{aligned}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, ALIGNED)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{gathered}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, GATHERED)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{split}"),
-+                             mItexEnvStart = PR_FALSE;
++                             mItexEnvStart = false;
 +                             mItexMode = NS_ITEX_MODE_MATH, ALIGNED)
 +    NS_TRY_EMPTY_WITH_ACTION(NS_LITERAL_STRING("{array}"),
 +                             mItexMode = (mItexEnvStart ?
@@ -2922,7 +2922,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +
 +  case NS_ITEX_MODE_COLOPTS:
 +    if (TryMatching(PRUnichar('}'))) {
-+      mItexEnvStart = PR_FALSE;
++      mItexEnvStart = false;
 +      mItexMode = NS_ITEX_MODE_MATH;
 +      return yy::nsItexParser::token::ENDST;
 +    } else if (TryMatching(PRUnichar('c'))) {

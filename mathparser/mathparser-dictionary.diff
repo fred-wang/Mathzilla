@@ -83,7 +83,7 @@ new file mode 100644
 +static PRInt32  gTableRefCount = 0;
 +static PRUint32 gOperatorCount = 0;
 +static nsDataHashtable<nsStringHashKey, nsOperatorFlags> *gOperatorTable;
-+static bool gInitialized   = PR_FALSE;
++static bool gInitialized   = false;
 +
 +#define kNotFound -1
 +static const PRUnichar kNullCh  = PRUnichar('\0');
@@ -120,12 +120,12 @@ new file mode 100644
 +  while (i <= len) {
 +    if (0 == state) {
 +      if (c != '\\')
-+        return PR_FALSE;
++        return false;
 +      if (i < len)
 +        c = aOperator[i];
 +      i++;
 +      if (('u' != c) && ('U' != c))
-+        return PR_FALSE;
++        return false;
 +      if (i < len)
 +        c = aOperator[i];
 +      i++;
@@ -138,7 +138,7 @@ new file mode 100644
 +         uchar = (uchar << 4) | (c - 'a' + 0x0a);
 +      else if (('A' <= c) && (c <= 'F'))
 +         uchar = (uchar << 4) | (c - 'A' + 0x0a);
-+      else return PR_FALSE;
++      else return false;
 +      if (i < len)
 +        c = aOperator[i];
 +      i++;
@@ -150,12 +150,12 @@ new file mode 100644
 +      }
 +    }
 +  }
-+  if (0 != state) return PR_FALSE;
++  if (0 != state) return false;
 +
 +  // Quick return when the caller doesn't care about the attributes and just
 +  // wants to know if this is a valid operator (this is the case at the first
 +  // pass of the parsing of the dictionary in InitOperators())
-+  if (!aForm) return PR_TRUE;
++  if (!aForm) return true;
 +
 +  value.AppendInt(aForm);
 +  nsAutoString key(value);
@@ -206,13 +206,13 @@ new file mode 100644
 +  // Add operator to hash table
 +  gOperatorTable->Put(key, flags);
 +
-+  return PR_TRUE;
++  return true;
 +}
 +
 +static nsresult
 +InitOperators(void)
 +{
-+  bool tableInitialized = PR_FALSE;
++  bool tableInitialized = false;
 +
 +  // Load the property file containing the Operator Dictionary
 +  nsresult rv;
@@ -284,7 +284,7 @@ new file mode 100644
 +static nsresult
 +InitGlobals()
 +{
-+  gInitialized = PR_TRUE;
++  gInitialized = true;
 +  nsresult rv = NS_ERROR_OUT_OF_MEMORY;
 +  rv = InitOperators();
 +  if (NS_FAILED(rv))
@@ -380,7 +380,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
  
  nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
-   mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+   mReportErrors(true), mSplitMiTokens(false), mConsoleService(nsnull)
  {
 +  nsMathMLOperatorDictionary::AddRefTable();
  }

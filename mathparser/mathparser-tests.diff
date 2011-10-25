@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent fcb3078e0a8266d23f30f868782037aa2fc7dcb0
+# Parent 3d8b2af5bbccac4a0a3b62e37e2769a1c712e7c8
 # Add unit tests to mathparser
 
 diff --git a/extensions/mathparser/Makefile.in b/extensions/mathparser/Makefile.in
@@ -1070,7 +1070,7 @@ diff --git a/testing/xpcshell/xpcshell.ini b/testing/xpcshell/xpcshell.ini
  [include:modules/libjar/zipwriter/test/unit/xpcshell.ini]
  [include:uriloader/exthandler/tests/unit/xpcshell.ini]
  [include:parser/xml/test/unit/xpcshell.ini]
- [include:modules/libpr0n/test/unit/xpcshell.ini]
+ [include:image/test/unit/xpcshell.ini]
  [include:dom/plugins/test/unit/xpcshell.ini]
 @@ -68,16 +69,17 @@ skip-if = os == "android"
  [include:browser/components/places/tests/unit/xpcshell.ini]

@@ -233,8 +233,8 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
  NS_IMPL_ISUPPORTS1_CI(nsMathParser, nsIMathParser)
  
  nsMathParser::nsMathParser() : mParsingMode(MATHPARSER_MODE_SIMPLE),
--  mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE)
-+  mReportErrors(PR_TRUE), mSplitMiTokens(PR_FALSE), mConsoleService(nsnull)
+-  mReportErrors(true), mSplitMiTokens(false)
++  mReportErrors(true), mSplitMiTokens(false), mConsoleService(nsnull)
  {
  }
  
@@ -292,7 +292,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +nsMathParser::SendSyntaxErrorToConsole()
 +{
 +  if (!mError) {
-+    mError = PR_TRUE;
++    mError = true;
 +    if (mReportErrors && mConsoleService) {
 +      // indicate the line where the error happens
 +      nsAutoString data(NS_LITERAL_STRING("MathParser: syntax error line "));
@@ -329,7 +329,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  // Initialize parameters
 +  mLineNumber = 1;
 +  mStartLine = mCurrentChar; 
-+  mError = PR_FALSE;
++  mError = false;
 +  mDocument = aDocument;
 +
 +  switch(mParsingMode) {
@@ -461,12 +461,12 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +{
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
 +  if (*mCurrentChar != c) {
-+    return PR_FALSE;
++    return false;
 +  }
 +
 +  mCurrentChar++;
 +
-+  return PR_TRUE;
++  return true;
 +}
 +
 +bool
@@ -475,19 +475,19 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  NS_ASSERTION(!IsEndOfBuffer(), "buffer end reached");
 +
 +  if (aString.Length() > RemainingChars()) {
-+    return PR_FALSE;
++    return false;
 +  }
 +
 +  const PRUnichar *p1, *p2;
 +  for (p1 = mCurrentChar, p2 = aString.BeginReading();
 +       p2 < aString.EndReading(); p1++, p2++) {
 +    if (*p1 != *p2) {
-+      return PR_FALSE;
++      return false;
 +    }
 +  }
 +  
 +  mCurrentChar = p1;
-+  return PR_TRUE;
++  return true;
 +}
 +
 +bool
@@ -520,17 +520,17 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  } else {
 +    // Check whether we are pointing to a digit
 +    if (!IsDigit(*mCurrentChar)) {
-+      return PR_FALSE;
++      return false;
 +    }
 +    // Move the pointer until we no longer have a digit or a number separator
-+    bool sepFound = PR_FALSE;
++    bool sepFound = false;
 +    for (p = mCurrentChar + 1; p < mLastChar; p++) {
 +      // ensure that the number contains at most one separator
 +      if (IsNumberSeparator(*p)) {
 +        if (sepFound) {
 +          break;
 +        }
-+        sepFound = PR_TRUE;
++        sepFound = true;
 +      } else if (!IsDigit(*p)) {
 +        break;
 +      }
@@ -547,7 +547,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +                  nsAutoString(mCurrentChar, p - mCurrentChar), aResult);
 +
 +  mCurrentChar = p;
-+  return PR_TRUE;
++  return true;
 +}
 +
 +bool
@@ -593,7 +593,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +
 +  // Check whether we are pointing to a letter
 +  if (!IsLetter(*mCurrentChar)) {
-+    return PR_FALSE;
++    return false;
 +  }
 +
 +  // Determine the text of the <mi/>
@@ -611,7 +611,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +                  nsAutoString(mCurrentChar, p - mCurrentChar), aResult);
 + 
 +  mCurrentChar = p;
-+  return PR_TRUE;
++  return true;
 +}
 +
 +bool
@@ -642,7 +642,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  if (open == PRUnichar(0x2018)) {
 +    return (c == PRUnichar(0x2019) || c == PRUnichar(0x201A));
 +  }
-+  return PR_FALSE;
++  return false;
 +}
 +
 +bool
@@ -653,7 +653,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  // Check whether we are pointing to an opening quote
 +  PRUnichar open = *mCurrentChar;
 +  if (!IsOpeningQuote(open)) {
-+    return PR_FALSE;
++    return false;
 +  }
 +
 +  // Move the pointer until we reach the closing quote
@@ -665,7 +665,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  }
 +  
 +  if (p == mLastChar) {
-+    return PR_FALSE;
++    return false;
 +  }
 +
 +  PRUnichar close = *p;
@@ -685,7 +685,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  aResult->SetAttribute(kAttributeClose, data);
 +  
 +  mCurrentChar = p + 1;
-+  return PR_TRUE;
++  return true;
 +}
 +
 +bool
@@ -734,10 +734,10 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +  // The operator is found, build a <mo/>
 +  if (aFlags) {
 +    NewTokenElement(kElementMo, data, aResult);
-+    return PR_TRUE;
++    return true;
 +  }
 +
-+  return PR_FALSE;
++  return false;
 +}
 +
 +bool
@@ -756,7 +756,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +
 +  // Check whether we are pointing to a space
 +  if (IsWhiteSpace(*mCurrentChar)) {
-+    return PR_FALSE;
++    return false;
 +  }
 +
 +  // Move the pointer until we reach a space
@@ -769,7 +769,7 @@ diff --git a/extensions/mathparser/src/nsMathParser.cpp b/extensions/mathparser/
 +                  nsAutoString(mCurrentChar, p - mCurrentChar), aResult);
 +
 +  mCurrentChar = p;
-+  return PR_TRUE;
++  return true;
 +}
 +
 +void
