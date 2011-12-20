@@ -1,12 +1,12 @@
 # HG changeset patch
 # User Frédéric Wang <fred.wang@free.fr>
-# Parent 48ad4ffc4230bf90896f1ce197f332c056cb0c74
+# Parent 13590cb94eab1ed7e632bbd457ef3f9cb09298b3
 # Base patch to prepare integration of mathparser
 
 diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 --- a/config/autoconf.mk.in
 +++ b/config/autoconf.mk.in
-@@ -427,16 +427,17 @@ ZIP		= @ZIP@
+@@ -418,16 +418,17 @@ ZIP		= @ZIP@
  XARGS		= @XARGS@
  STRIP		= @STRIP@
  DOXYGEN		= @DOXYGEN@
@@ -27,7 +27,7 @@ diff --git a/config/autoconf.mk.in b/config/autoconf.mk.in
 diff --git a/configure.in b/configure.in
 --- a/configure.in
 +++ b/configure.in
-@@ -6322,16 +6322,25 @@ if test -z "$MOZ_JSDEBUGGER" -a `echo "$
+@@ -6273,16 +6273,25 @@ if test -z "$MOZ_JSDEBUGGER" -a `echo "$
  fi
  
  dnl xforms requires xtf
@@ -167,8 +167,8 @@ new file mode 100644
 +    <em:targetApplication>
 +      <Description>
 +        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-+        <em:minVersion>7.0</em:minVersion>
-+        <em:maxVersion>7.0a1</em:maxVersion>
++        <em:minVersion>11.0a1</em:minVersion>
++        <em:maxVersion>11.0a1</em:maxVersion>
 +      </Description>
 +    </em:targetApplication>
 +
