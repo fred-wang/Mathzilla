@@ -10,6 +10,14 @@ This directory contains packaged add-on files:
 See http://www.maths-informatique-jeux.com/blog/frederic/?post/2010/11/14/Mozilla-MathML-Add-ons
 
 ********************************************************************************
+mathml-fonts
+********************************************************************************
+
+Edit config if necessary, move in mathml-fonts/ and type "make".
+
+http://people.mozilla.org/~jkew/woff/
+
+********************************************************************************
 mathparser
 ********************************************************************************
 

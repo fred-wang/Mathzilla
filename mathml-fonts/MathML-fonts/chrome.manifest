@@ -1,0 +1,3 @@
+override resource://gre-resources/mathml.css resource/mathml.css
+resource MathML-fonts resource/MathML-fonts/
+
