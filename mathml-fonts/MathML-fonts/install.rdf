@@ -39,11 +39,25 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
+
+    <em:name>MathML-fonts</em:name>
     <em:id>MathML-fonts@mozilla.com</em:id>
     <em:version>0.1</em:version>
-    <em:name>MathML-fonts</em:name>
-    <em:unpack>true</em:unpack>
     <em:description>Fonts for Mozilla's MathML engine.</em:description>
     <em:creator>Frédéric Wang</em:creator>
+
+    <em:type>2</em:type>
+    <em:unpack>true</em:unpack>
+    <em:bootstrap>true</em:bootstrap>
+
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+        <em:minVersion>4.0b1</em:minVersion>
+        <em:maxVersion>13.0a1</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+  </Description>
 </RDF>
 

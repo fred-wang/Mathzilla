@@ -39,9 +39,11 @@ include config
 FONT_FILE_LIST = font-file-list
 MATHML_CSS = mathml.css
 MATHML_FONTS = MathML-fonts
+MATHML_FONTS_XPI = mathml-fonts.xpi
 MATHML_FONTS_ZIP = mathml-fonts.zip
 RESOURCE = resource
-RESOURCE_CHROME_URI = resource://MathML-fonts
+RESOURCE_CHROME_URI = resource://mathml-fonts/MathML-fonts
+SECTION_END_MARKER = "DOWNLOADABLE_FONT_SECTION_END"
 
 all: download woff css xpi
 
@@ -50,7 +52,7 @@ clean:
 	@ rm -f $(MATHML_FONTS_ZIP)
 	@ rm -f $(MATHML_CSS)
 	@ rm -f $(FONT_FILE_LIST)*
-	@ rm -rf $(MATHML_FONTS)-tmp
+	@ rm -rf $(MATHML_FONTS)/$(RESOURCE)
 
 download:
 	@ echo "Downloading MathML fonts..."
@@ -60,13 +62,13 @@ download:
 	@ $(WGET) $(MATHML_CSS_URI) -O $(MATHML_CSS)
 
 woff:
-	@ mkdir -p $(MATHML_FONTS)-tmp/$(RESOURCE)
+	@ mkdir -p $(MATHML_FONTS)/$(RESOURCE)
 
 	@ echo "Extracting MathML fonts..."
-	@ $(UNZIP) -o $(MATHML_FONTS_ZIP) -d $(MATHML_FONTS)-tmp/$(RESOURCE)
+	@ $(UNZIP) -o $(MATHML_FONTS_ZIP) -d $(MATHML_FONTS)/$(RESOURCE)
 
 	@ echo "Converting otf fonts to woff..."
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/$(MATHML_FONTS)/ ; \
+	@ cd $(MATHML_FONTS)/$(RESOURCE)/$(MATHML_FONTS)/ ; \
 	  for FONTDIR in `ls`; do \
 	    cd $$FONTDIR; \
 	    for FONTFILE in `ls *.otf`; do \
@@ -79,14 +81,13 @@ woff:
 css:
 	@ echo "Adding @font-face rules in mathml.css..."
 
-	@ cp $(MATHML_CSS) $(MATHML_FONTS)-tmp/$(RESOURCE)/$(MATHML_CSS)
-
-	@ # add a new section to mathml.css
-	@ echo "\n/******************************************************************************/\n/* CSS rules for downloadable fonts                                           */\n/******************************************************************************/\n" >> $(MATHML_FONTS)-tmp/$(RESOURCE)/$(MATHML_CSS)
+	@ # add a marker in mathml.css
+	@ $(SED) "/END LICENSE BLOCK/a\\\
+$(SECTION_END_MARKER)" $(MATHML_CSS) > $(MATHML_FONTS)/$(RESOURCE)/$(MATHML_CSS)
 
 	@ # first enumerate all the font files in 
 	@ cat /dev/null > $(FONT_FILE_LIST)
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/$(MATHML_FONTS); \
+	@ cd $(MATHML_FONTS)/$(RESOURCE)/$(MATHML_FONTS); \
 	  for FONTDIR in `ls`; do \
 	    cd $$FONTDIR; \
 	    for FONTFILE in `ls *.woff`; do \
@@ -101,64 +102,39 @@ css:
 	    $(EGREP) -e "-$$STYLE\.woff" $(FONT_FILE_LIST) > $(FONT_FILE_LIST)-$$STYLE; \
 	  done;
 
-	@ # None
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/; \
+	@ # Finally write font-face rules
+	@ writeFontFaceRule() { \
+	    $(SED) -i "/$(SECTION_END_MARKER)/i\\\
+@font-face { font-family: '$$1'; \
+src: local('$$2'), url('$(RESOURCE_CHROME_URI)/$$3'); \
+font-weight: $$4; font-style: $$5; }" $(MATHML_CSS); \
+	  }; \
+	  cd $(MATHML_FONTS)/$(RESOURCE)/; \
           for FONTFILE in `cat ../../$(FONT_FILE_LIST)-None`; do \
-	    FONTFAMILY=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\.woff|\1|p "` ; \
-	    echo "@font-face {" >> $(MATHML_CSS); \
-            echo "  font-family: '$$FONTFAMILY';" >> $(MATHML_CSS); \
-            echo "  src: url('$(RESOURCE_CHROME_URI)/$$FONTFILE');" >> $(MATHML_CSS); \
-            echo "}" >> $(MATHML_CSS); \
-	  done;
-
-	@ # Regular
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/; \
+	    LOCALNAME=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\.woff|\1|p "` ; \
+	    writeFontFaceRule $$LOCALNAME $$LOCALNAME $$FONTFILE "normal" "normal"; \
+	  done; \
           for FONTFILE in `cat ../../$(FONT_FILE_LIST)-Regular`; do \
+	    LOCALNAME=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\.woff|\1|p "` ; \
 	    FONTFAMILY=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\-Regular\.woff|\1|p "` ; \
-	    echo "@font-face {" >> $(MATHML_CSS); \
-            echo "  font-family: '$$FONTFAMILY';" >> $(MATHML_CSS); \
-            echo "  src: url('$(RESOURCE_CHROME_URI)/$$FONTFILE');" >> $(MATHML_CSS); \
-            echo "  font-weight: normal;" >> $(MATHML_CSS); \
-            echo "  font-style: normal;" >> $(MATHML_CSS); \
-            echo "}" >> $(MATHML_CSS); \
-	  done;
-
-	@ # Bold
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/; \
+	    writeFontFaceRule $$LOCALNAME $$FONTFAMILY $$FONTFILE "normal" "normal"; \
+	  done; \
           for FONTFILE in `cat ../../$(FONT_FILE_LIST)-Bold`; do \
+	    LOCALNAME=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\.woff|\1|p "` ; \
 	    FONTFAMILY=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\-Bold\.woff|\1|p "` ; \
-	    echo "@font-face {" >> $(MATHML_CSS); \
-            echo "  font-family: '$$FONTFAMILY';" >> $(MATHML_CSS); \
-            echo "  src: url('$(RESOURCE_CHROME_URI)/$$FONTFILE');" >> $(MATHML_CSS); \
-            echo "  font-weight: bold;" >> $(MATHML_CSS); \
-            echo "  font-style: normal;" >> $(MATHML_CSS); \
-            echo "}" >> $(MATHML_CSS); \
-	  done;
-
-	@ # Italic
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/; \
+	    writeFontFaceRule $$FONTFAMILY $$LOCALNAME $$FONTFILE "bold" "normal"; \
+	  done; \
           for FONTFILE in `cat ../../$(FONT_FILE_LIST)-Italic`; do \
+	    LOCALNAME=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\.woff|\1|p "` ; \
 	    FONTFAMILY=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\-Italic\.woff|\1|p "` ; \
-	    echo "@font-face {" >> $(MATHML_CSS); \
-            echo "  font-family: '$$FONTFAMILY';" >> $(MATHML_CSS); \
-            echo "  src: url('$(RESOURCE_CHROME_URI)/$$FONTFILE');" >> $(MATHML_CSS); \
-            echo "  font-weight: normal;" >> $(MATHML_CSS); \
-            echo "  font-style: italic;" >> $(MATHML_CSS); \
-            echo "}" >> $(MATHML_CSS); \
-	  done;
-
-	@ # BoldItalic
-	@ cd $(MATHML_FONTS)-tmp/$(RESOURCE)/; \
+	    writeFontFaceRule $$FONTFAMILY $$LOCALNAME $$FONTFILE "normal" "italic"; \
+	  done; \
           for FONTFILE in `cat ../../$(FONT_FILE_LIST)-BoldItalic`; do \
+	    LOCALNAME=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\.woff|\1|p "` ; \
 	    FONTFAMILY=`echo $$FONTFILE | $(SED) -n "s|.*/\(.*\)\-BoldItalic\.woff|\1|p "` ; \
-	    echo "@font-face {" >> $(MATHML_CSS); \
-            echo "  font-family: '$$FONTFAMILY';" >> $(MATHML_CSS); \
-            echo "  src: url('$(RESOURCE_CHROME_URI)/$$FONTFILE');" >> $(MATHML_CSS); \
-            echo "  font-weight: bold;" >> $(MATHML_CSS); \
-            echo "  font-style: italic;" >> $(MATHML_CSS); \
-            echo "}" >> $(MATHML_CSS); \
-	  done;
+	    writeFontFaceRule $$FONTFAMILY $$LOCALNAME $$FONTFILE "bold" "italic"; \
+	  done; \
+          $(SED) -i "/$(SECTION_END_MARKER)/d" $(MATHML_CSS)
 
 xpi:
-	@ cp -r $(MATHML_FONTS)/* $(MATHML_FONTS)-tmp
-
+	@ cd $(MATHML_FONTS) ; $(ZIP) -r ../$(MATHML_FONTS_XPI) *
