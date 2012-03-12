@@ -36,25 +36,34 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-function startup(data, reason) {
-  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0)  
-    Components.manager.addBootstrappedManifestLocation(params.installPath);
-
-//  var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
-//                      .getService(Components.interfaces.nsIStyleSheetService);
-//  var ios = Components.classes["@mozilla.org/network/io-service;1"]
-//                      .getService(Components.interfaces.nsIIOService);
-//  var uri = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
-//  sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
+function startup(aData, aReason) {
+  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0) {
+    Components.manager.addBootstrappedManifestLocation(aData.installPath);
+  }
+  var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
+                      .getService(Components.interfaces.nsIStyleSheetService);
+  var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                      .getService(Components.interfaces.nsIIOService);
+  var uri = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
+  sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
 }
 
-function shutdown(data, reason) {
-  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0)  
-    Components.manager.removeBootstrappedManifestLocation(params.installPath);  
+function shutdown(aData, aReason) {
+  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0) {
+    Components.manager.removeBootstrappedManifestLocation(aData.installPath);
+   }
+  var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
+                      .getService(Components.interfaces.nsIStyleSheetService);
+  var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                      .getService(Components.interfaces.nsIIOService);
+  var u = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
+  if(sss.sheetRegistered(u, sss.USER_SHEET)) {
+    sss.unregisterSheet(u, sss.USER_SHEET);
+  }
 }
 
-function install(data, reason) {
+function install(aData, aReason) {
 }
 
-function uninstall(data, reason) {
+function uninstall(aData, aReason) {
 }
