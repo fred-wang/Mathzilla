@@ -40,12 +40,12 @@ function startup(data, reason) {
   if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0)  
     Components.manager.addBootstrappedManifestLocation(params.installPath);
 
-  var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
-                      .getService(Components.interfaces.nsIStyleSheetService);
-  var ios = Components.classes["@mozilla.org/network/io-service;1"]
-                      .getService(Components.interfaces.nsIIOService);
-  var uri = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
-  // sss.loadAndRegisterSheet(uri, sss.AGENT_USER);
+//  var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
+//                      .getService(Components.interfaces.nsIStyleSheetService);
+//  var ios = Components.classes["@mozilla.org/network/io-service;1"]
+//                      .getService(Components.interfaces.nsIIOService);
+//  var uri = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
+//  sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
 }
 
 function shutdown(data, reason) {
