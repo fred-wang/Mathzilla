@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+
 function startup(aData, aReason) {
   if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0) {
     Components.manager.addBootstrappedManifestLocation(aData.installPath);
@@ -44,7 +46,7 @@ function startup(aData, aReason) {
                       .getService(Components.interfaces.nsIStyleSheetService);
   var ios = Components.classes["@mozilla.org/network/io-service;1"]
                       .getService(Components.interfaces.nsIIOService);
-  var uri = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
+  var uri = ios.newURI("resource/mathml.css", null, aData.resourceURI);
   sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
 }
 
@@ -56,7 +58,7 @@ function shutdown(aData, aReason) {
                       .getService(Components.interfaces.nsIStyleSheetService);
   var ios = Components.classes["@mozilla.org/network/io-service;1"]
                       .getService(Components.interfaces.nsIIOService);
-  var u = ios.newURI("resource://mathml-fonts/mathml.css", null, null);
+  var u = ios.newURI("resource/mathml.css", null, aData.resourceURI);
   if(sss.sheetRegistered(u, sss.USER_SHEET)) {
     sss.unregisterSheet(u, sss.USER_SHEET);
   }

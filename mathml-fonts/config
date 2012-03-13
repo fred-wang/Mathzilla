@@ -1,5 +1,4 @@
 EGREP = egrep
-MATHML_CSS_URI = http://mxr.mozilla.org/mozilla-release/source/layout/mathml/mathml.css?raw=1
 MATHML_FONTS_URI = https://developer.mozilla.org/@api/deki/files/6182/=MathML-fonts.zip
 SED = sed
 SFNT2WOFF = sfnt2woff
