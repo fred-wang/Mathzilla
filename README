@@ -4,6 +4,7 @@ xpi
 
 This directory contains packaged add-on files:
 
+- mathml-fonts.xpi
 - mathparser-0.1.xpi (Linux only)
 - mathzilla-0.1.xpi
 
@@ -13,9 +14,20 @@ See http://www.maths-informatique-jeux.com/blog/frederic/?post/2010/11/14/Mozill
 mathml-fonts
 ********************************************************************************
 
-Edit config if necessary, move in mathml-fonts/ and type "make".
+Source of the mathml-fonts extension, which adds mathematical fonts necessary
+for Gecko's MathML engine (in WOFF format) and automatically attachs to each
+page a CSS style sheet with @font-face rules to load the fonts.
 
-http://people.mozilla.org/~jkew/woff/
+The extension is automatically built from the MathML-fonts.zip archive available
+on Mozilla MathML Project page [1]. It converts odt fonts into woff using
+Jonathan Kew's sfnt2woff tool [2].
+
+To build the extension, move into mathml-fonts/, edit the config file
+(if necessary) and type "make". You will normally find a generated
+mathml-fonts.xpi file.
+
+[1] MathML Fonts: https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts
+[2] sfnt2woff: http://people.mozilla.org/~jkew/woff/
 
 ********************************************************************************
 mathparser
