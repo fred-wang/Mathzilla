@@ -36,12 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/Services.jsm");
-
 function startup(aData, aReason) {
-  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0) {
-    Components.manager.addBootstrappedManifestLocation(aData.installPath);
-  }
   var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
                       .getService(Components.interfaces.nsIStyleSheetService);
   var ios = Components.classes["@mozilla.org/network/io-service;1"]
@@ -51,9 +46,6 @@ function startup(aData, aReason) {
 }
 
 function shutdown(aData, aReason) {
-  if (Services.vc.compare(Services.appinfo.platformVersion, "10.0") < 0) {
-    Components.manager.removeBootstrappedManifestLocation(aData.installPath);
-   }
   var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
                       .getService(Components.interfaces.nsIStyleSheetService);
   var ios = Components.classes["@mozilla.org/network/io-service;1"]
