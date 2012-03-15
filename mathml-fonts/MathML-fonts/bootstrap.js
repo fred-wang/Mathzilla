@@ -46,13 +46,15 @@ function startup(aData, aReason) {
 }
 
 function shutdown(aData, aReason) {
-  var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
-                      .getService(Components.interfaces.nsIStyleSheetService);
-  var ios = Components.classes["@mozilla.org/network/io-service;1"]
-                      .getService(Components.interfaces.nsIIOService);
-  var u = ios.newURI("resource/mathml.css", null, aData.resourceURI);
-  if(sss.sheetRegistered(u, sss.USER_SHEET)) {
-    sss.unregisterSheet(u, sss.USER_SHEET);
+  if (aReason != APP_SHUTDOWN) {
+    var sss = Components.classes["@mozilla.org/content/style-sheet-service;1"]
+                        .getService(Components.interfaces.nsIStyleSheetService);
+    var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                        .getService(Components.interfaces.nsIIOService);
+    var u = ios.newURI("resource/mathml.css", null, aData.resourceURI);
+    if(sss.sheetRegistered(u, sss.USER_SHEET)) {
+      sss.unregisterSheet(u, sss.USER_SHEET);
+    }
   }
 }
 

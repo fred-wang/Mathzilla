@@ -40,14 +40,9 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
 
-    <em:name>MathML-fonts</em:name>
     <em:id>MathML-fonts@mozilla.com</em:id>
     <em:version>1.0</em:version>
-    <em:description>Fonts for Mozilla's MathML engine.</em:description>
-    <em:creator>Frédéric Wang</em:creator>
-
     <em:type>2</em:type>
-    <em:bootstrap>true</em:bootstrap>
 
     <!-- Toolkit -->
     <em:targetApplication>
@@ -102,6 +97,12 @@
         <em:maxVersion>2.11a1</em:maxVersion>
       </Description>
     </em:targetApplication>
+
+    <em:name>MathML-fonts</em:name>
+    <em:bootstrap>true</em:bootstrap>
+    <em:description>Fonts for Mozilla's MathML engine.</em:description>
+    <em:creator>Frédéric Wang</em:creator>
+    <em:homepageURL>https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts</em:homepageURL>
 
   </Description>
 </RDF>
