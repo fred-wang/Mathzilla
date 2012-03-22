@@ -101,7 +101,7 @@ css:
             local LOCALNAME2="`echo $$LOCALNAME1 | $(SED) 's|\-|\ |g'`"; \
 	    echo "@font-face {" >> $(MATHML_CSS); \
             echo "  font-family: '$$FONTFAMILY';" >> $(MATHML_CSS); \
-            echo "  src: local('$$FONTFAMILY'), local('$$LOCALNAME1'), local('$$LOCALNAME2'), url('$(RESOURCE_WOFF_FONTS_URI)$$2');" >> $(MATHML_CSS); \
+            echo "  src: local('$$LOCALNAME1'), local('$$LOCALNAME2'), url('$(RESOURCE_WOFF_FONTS_URI)$$2');" >> $(MATHML_CSS); \
             echo "  font-weight: $$3;" >> $(MATHML_CSS); \
             echo "  font-style: $$4;" >> $(MATHML_CSS); \
             echo "}" >> $(MATHML_CSS); \
