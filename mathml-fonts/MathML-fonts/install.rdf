@@ -102,7 +102,6 @@
     <em:bootstrap>true</em:bootstrap>
     <em:description>Fonts for Mozilla's MathML engine.</em:description>
     <em:creator>Frédéric Wang</em:creator>
-    <em:homepageURL>https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts</em:homepageURL>
 
   </Description>
 </RDF>
