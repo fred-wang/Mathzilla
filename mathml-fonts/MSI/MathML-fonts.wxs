@@ -1,0 +1,573 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- -*- Mode: XML; tab-width: 4; indent-tabs-mode: nil; -*- -->
+<!-- vim: set shiftwidth=4 tabstop=4 autoindent noexpandtab: -->
+
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+- License, v. 2.0. If a copy of the MPL was not distributed with this
+- file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!--
+To generate the Microsoft Installer, follow these steps:
+
+1) Download the latest version of the WiX toolset
+   (See http://wix.sourceforge.net/)
+2) Be sure to have Microsoft .NET Framework installed
+3) Download and extract the MathML-fonts.zip archive from
+   https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts
+   in the MathML-fonts-MSI directory.
+4) candle MathML-fonts.wxs
+5) light -ext WixUIExtension MathML-fonts.wixobj
+
+To test the installer with the command line:
+
+1) Install (logging turned on):
+   msiexec /i MathML-fonts.msi /l*v MathML-fonts.log
+2) Uninstall:
+   msiexec /x MathML-fonts.msi
+
+TODO: Handle upgrade of the MathML-fonts package?
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Name="MathML-fonts"
+           Id="D0FA0236-BECD-11E1-BD12-0090F59ACADC"
+           UpgradeCode="D7A13F8C-BECD-11E1-A383-0090F59ACADC"
+           Language="1033" Codepage="1252"
+           Version="1.0.0"
+           Manufacturer="Mozilla MathML Project">
+    <Package Id="*"
+             Description="MathML fonts - Windows installer"
+             InstallerVersion="100"
+             Languages="1033" SummaryCodepage="1252"
+             Compressed="yes"/>
+    <Media Id="1" Cabinet="Disk1.cab" EmbedCab="yes"/>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="FontsFolder" Name="FontsFolder">
+        <!-- This list has been generated automatically using
+             "for FontFile in `ls *.otf`; do echo $FontFile ; uuid ; done"
+             on each directory and reformatted with an emacs macro. Guid
+             of a given file must be preserved when the package is updated.
+             New Guid should be generated for new files.-->
+        <Component Id="ASANA_MATH.OTF"
+                   Guid="8835C5B0-BECF-11E1-B87B-0090F59ACADC">
+          <File Id="ASANA_MATH.OTF"
+                Name="Asana-Math.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\Asana-Math\Asana-Math.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_AMS_REGULAR.OTF"
+                   Guid="36BEEF5C-BED6-11E1-96E5-0090F59ACADC">
+          <File Id="MATHJAX_AMS_REGULAR.OTF"
+                Name="MathJax_AMS-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_AMS-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_CALIGRAPHIC_BOLD.OTF"
+                   Guid="36BF32F0-BED6-11E1-80C5-0090F59ACADC">
+          <File Id="MATHJAX_CALIGRAPHIC_BOLD.OTF"
+                Name="MathJax_Caligraphic-Bold.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Caligraphic-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_CALIGRAPHIC_REGULAR.OTF"
+                   Guid="36BF73FA-BED6-11E1-BCB7-0090F59ACADC">
+          <File Id="MATHJAX_CALIGRAPHIC_REGULAR.OTF"
+                Name="MathJax_Caligraphic-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Caligraphic-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_FRAKTUR_BOLD.OTF"
+                   Guid="36BFB7A2-BED6-11E1-8BD5-0090F59ACADC">
+          <File Id="MATHJAX_FRAKTUR_BOLD.OTF"
+                Name="MathJax_Fraktur-Bold.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Fraktur-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_FRAKTUR_REGULAR.OTF"
+                   Guid="36BFFAA0-BED6-11E1-A739-0090F59ACADC">
+          <File Id="MATHJAX_FRAKTUR_REGULAR.OTF"
+                Name="MathJax_Fraktur-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Fraktur-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_MAIN_BOLD.OTF"
+                   Guid="36C04C6C-BED6-11E1-A679-0090F59ACADC">
+          <File Id="MATHJAX_MAIN_BOLD.OTF"
+                Name="MathJax_Main-Bold.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Main-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_MAIN_ITALIC.OTF"
+                   Guid="36C09654-BED6-11E1-AE8F-0090F59ACADC">
+          <File Id="MATHJAX_MAIN_ITALIC.OTF"
+                Name="MathJax_Main-Italic.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Main-Italic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_MAIN_REGULAR.OTF"
+                   Guid="36C0E41A-BED6-11E1-825D-0090F59ACADC">
+          <File Id="MATHJAX_MAIN_REGULAR.OTF"
+                Name="MathJax_Main-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Main-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_MATH_BOLDITALIC.OTF"
+                   Guid="36C12B8C-BED6-11E1-B502-0090F59ACADC">
+          <File Id="MATHJAX_MATH_BOLDITALIC.OTF"
+                Name="MathJax_Math-BoldItalic.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Math-BoldItalic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_MATH_ITALIC.OTF"
+                   Guid="36C17E52-BED6-11E1-80E0-0090F59ACADC">
+          <File Id="MATHJAX_MATH_ITALIC.OTF"
+                Name="MathJax_Math-Italic.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Math-Italic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_MATH_REGULAR.OTF"
+                   Guid="36C1CD80-BED6-11E1-9869-0090F59ACADC">
+          <File Id="MATHJAX_MATH_REGULAR.OTF"
+                Name="MathJax_Math-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Math-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SANSSERIF_BOLD.OTF"
+                   Guid="36C211D2-BED6-11E1-9C14-0090F59ACADC">
+          <File Id="MATHJAX_SANSSERIF_BOLD.OTF"
+                Name="MathJax_SansSerif-Bold.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_SansSerif-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SANSSERIF_ITALIC.OTF"
+                   Guid="36C25232-BED6-11E1-836F-0090F59ACADC">
+          <File Id="MATHJAX_SANSSERIF_ITALIC.OTF"
+                Name="MathJax_SansSerif-Italic.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_SansSerif-Italic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SANSSERIF_REGULAR.OTF"
+                   Guid="36C29F1C-BED6-11E1-A531-0090F59ACADC">
+          <File Id="MATHJAX_SANSSERIF_REGULAR.OTF"
+                Name="MathJax_SansSerif-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_SansSerif-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SCRIPT_REGULAR.OTF"
+                   Guid="36C32978-BED6-11E1-B5EC-0090F59ACADC">
+          <File Id="MATHJAX_SCRIPT_REGULAR.OTF"
+                Name="MathJax_Script-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Script-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SIZE1_REGULAR.OTF"
+                   Guid="36C3732E-BED6-11E1-A7B8-0090F59ACADC">
+          <File Id="MATHJAX_SIZE1_REGULAR.OTF"
+                Name="MathJax_Size1-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Size1-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SIZE2_REGULAR.OTF"
+                   Guid="36C3BF8C-BED6-11E1-865C-0090F59ACADC">
+          <File Id="MATHJAX_SIZE2_REGULAR.OTF"
+                Name="MathJax_Size2-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Size2-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SIZE3_REGULAR.OTF"
+                   Guid="36C417A2-BED6-11E1-BF5A-0090F59ACADC">
+          <File Id="MATHJAX_SIZE3_REGULAR.OTF"
+                Name="MathJax_Size3-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Size3-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_SIZE4_REGULAR.OTF"
+                   Guid="36C4609A-BED6-11E1-9E21-0090F59ACADC">
+          <File Id="MATHJAX_SIZE4_REGULAR.OTF"
+                Name="MathJax_Size4-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Size4-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_TYPEWRITER_REGULAR.OTF"
+                   Guid="36C4A370-BED6-11E1-8131-0090F59ACADC">
+          <File Id="MATHJAX_TYPEWRITER_REGULAR.OTF"
+                Name="MathJax_Typewriter-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_Typewriter-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_WINCHROME_REGULAR.OTF"
+                   Guid="36C4E5C4-BED6-11E1-AF99-0090F59ACADC">
+          <File Id="MATHJAX_WINCHROME_REGULAR.OTF"
+                Name="MathJax_WinChrome-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_WinChrome-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="MATHJAX_WINIE6_REGULAR.OTF"
+                   Guid="36C5298A-BED6-11E1-9B8D-0090F59ACADC">
+          <File Id="MATHJAX_WINIE6_REGULAR.OTF"
+                Name="MathJax_WinIE6-Regular.otf"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\MathJax\MathJax_WinIE6-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXGENERAL_BOLDITALIC.OTF"
+                   Guid="A484069C-BED3-11E1-B1D7-0090F59ACADC">
+          <File Id="STIXGENERAL_BOLDITALIC.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXGeneral-BoldItalic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXGENERAL_BOLD.OTF"
+                   Guid="A4844E18-BED3-11E1-88CE-0090F59ACADC">
+          <File Id="STIXGENERAL_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXGeneral-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXGENERAL_ITALIC.OTF"
+                   Guid="A48490B2-BED3-11E1-A3E3-0090F59ACADC">
+          <File Id="STIXGENERAL_ITALIC.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXGeneral-Italic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXGENERAL_REGULAR.OTF"
+                   Guid="A484D14E-BED3-11E1-A3D5-0090F59ACADC">
+          <File Id="STIXGENERAL_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXGeneral-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSD_BOLD.OTF"
+                   Guid="A48512A8-BED3-11E1-9085-0090F59ACADC">
+          <File Id="STIXINTEGRALSD_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsD-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSD_REGULAR.OTF"
+                   Guid="A48553F8-BED3-11E1-A50E-0090F59ACADC">
+          <File Id="STIXINTEGRALSD_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsD-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSSM_BOLD.OTF"
+                   Guid="A485928C-BED3-11E1-A555-0090F59ACADC">
+          <File Id="STIXINTEGRALSSM_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsSm-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSSM_REGULAR.OTF"
+                   Guid="A485DD14-BED3-11E1-AD5F-0090F59ACADC">
+          <File Id="STIXINTEGRALSSM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsSm-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSUP_BOLD.OTF"
+                   Guid="A4863372-BED3-11E1-A1AB-0090F59ACADC">
+          <File Id="STIXINTEGRALSUP_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsUp-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSUPD_BOLD.OTF"
+                   Guid="A486857A-BED3-11E1-8392-0090F59ACADC">
+          <File Id="STIXINTEGRALSUPD_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsUpD-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSUPD_REGULAR.OTF"
+                   Guid="A486CE0E-BED3-11E1-BFD9-0090F59ACADC">
+          <File Id="STIXINTEGRALSUPD_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsUpD-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSUP_REGULAR.OTF"
+                   Guid="A4871FC6-BED3-11E1-B2A6-0090F59ACADC">
+          <File Id="STIXINTEGRALSUP_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsUp-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSUPSM_BOLD.OTF"
+                   Guid="A4876332-BED3-11E1-9F5F-0090F59ACADC">
+          <File Id="STIXINTEGRALSUPSM_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsUpSm-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXINTEGRALSUPSM_REGULAR.OTF"
+                   Guid="A487AB12-BED3-11E1-BAE5-0090F59ACADC">
+          <File Id="STIXINTEGRALSUPSM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXIntegralsUpSm-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXNONUNICODE_BOLDITALIC.OTF"
+                   Guid="A487F34C-BED3-11E1-B08B-0090F59ACADC">
+          <File Id="STIXNONUNICODE_BOLDITALIC.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXNonUnicode-BoldItalic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXNONUNICODE_BOLD.OTF"
+                   Guid="A4884036-BED3-11E1-AB9D-0090F59ACADC">
+          <File Id="STIXNONUNICODE_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXNonUnicode-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXNONUNICODE_ITALIC.OTF"
+                   Guid="A4889036-BED3-11E1-AC03-0090F59ACADC">
+          <File Id="STIXNONUNICODE_ITALIC.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXNonUnicode-Italic.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXNONUNICODE_REGULAR.OTF"
+                   Guid="A488D73A-BED3-11E1-B9CB-0090F59ACADC">
+          <File Id="STIXNONUNICODE_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXNonUnicode-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZEFIVESYM_REGULAR.OTF"
+                   Guid="A48919D4-BED3-11E1-BE08-0090F59ACADC">
+          <File Id="STIXSIZEFIVESYM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeFiveSym-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZEFOURSYM_BOLD.OTF"
+                   Guid="A4895D5E-BED3-11E1-B38A-0090F59ACADC">
+          <File Id="STIXSIZEFOURSYM_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeFourSym-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZEFOURSYM_REGULAR.OTF"
+                   Guid="A4899DDC-BED3-11E1-9526-0090F59ACADC">
+          <File Id="STIXSIZEFOURSYM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeFourSym-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZEONESYM_BOLD.OTF"
+                   Guid="A489DFF4-BED3-11E1-AB2E-0090F59ACADC">
+          <File Id="STIXSIZEONESYM_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeOneSym-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZEONESYM_REGULAR.OTF"
+                   Guid="A48A2126-BED3-11E1-84B5-0090F59ACADC">
+          <File Id="STIXSIZEONESYM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeOneSym-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZETHREESYM_BOLD.OTF"
+                   Guid="A48A62B2-BED3-11E1-8DEA-0090F59ACADC">
+          <File Id="STIXSIZETHREESYM_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeThreeSym-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZETHREESYM_REGULAR.OTF"
+                   Guid="A48AA65A-BED3-11E1-961D-0090F59ACADC">
+          <File Id="STIXSIZETHREESYM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeThreeSym-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZETWOSYM_BOLD.OTF"
+                   Guid="A48AE746-BED3-11E1-98B9-0090F59ACADC">
+          <File Id="STIXSIZETWOSYM_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeTwoSym-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXSIZETWOSYM_REGULAR.OTF"
+                   Guid="A48B3052-BED3-11E1-B2EB-0090F59ACADC">
+          <File Id="STIXSIZETWOSYM_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXSizeTwoSym-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXVARIANTS_BOLD.OTF"
+                   Guid="A48B7422-BED3-11E1-84F5-0090F59ACADC">
+          <File Id="STIXVARIANTS_BOLD.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXVariants-Bold.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+        <Component Id="STIXVARIANTS_REGULAR.OTF"
+                   Guid="A48BB536-BED3-11E1-8222-0090F59ACADC">
+          <File Id="STIXVARIANTS_REGULAR.OTF"
+                DiskId="1"
+                Source="SourceDir\MathML-fonts\STIX\STIXVariants-Regular.otf"
+                TrueType="yes"
+                KeyPath="yes"/>
+        </Component>
+      </Directory>
+    </Directory>
+    <!-- This list has been generated automatically using
+         "for FontFile in `ls *.otf`; do echo $FontFile ; done"
+         on each directory and reformatted with an emacs macro -->
+    <Feature Id="AsanaMath"
+             Title="Asana-Math"
+             Description="Install Asana-Math font"
+             Level="1"
+             AllowAdvertise="no"
+             InstallDefault="local">
+      <ComponentRef Id="ASANA_MATH.OTF"/>
+    </Feature>
+    <Feature Id="MathJax"
+             Title="MathJax"
+             Description="Install MathJax fonts"
+             Level="1"
+             AllowAdvertise="no"
+             InstallDefault="local">
+      <ComponentRef Id="MATHJAX_AMS_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_CALIGRAPHIC_BOLD.OTF"/>
+      <ComponentRef Id="MATHJAX_CALIGRAPHIC_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_FRAKTUR_BOLD.OTF"/>
+      <ComponentRef Id="MATHJAX_FRAKTUR_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_MAIN_BOLD.OTF"/>
+      <ComponentRef Id="MATHJAX_MAIN_ITALIC.OTF"/>
+      <ComponentRef Id="MATHJAX_MAIN_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_MATH_BOLDITALIC.OTF"/>
+      <ComponentRef Id="MATHJAX_MATH_ITALIC.OTF"/>
+      <ComponentRef Id="MATHJAX_MATH_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_SANSSERIF_BOLD.OTF"/>
+      <ComponentRef Id="MATHJAX_SANSSERIF_ITALIC.OTF"/>
+      <ComponentRef Id="MATHJAX_SANSSERIF_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_SCRIPT_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_SIZE1_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_SIZE2_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_SIZE3_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_SIZE4_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_TYPEWRITER_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_WINCHROME_REGULAR.OTF"/>
+      <ComponentRef Id="MATHJAX_WINIE6_REGULAR.OTF"/>
+    </Feature>
+    <Feature Id="STIX"
+             Title="STIX"
+             Description="Install STIX fonts"
+             Level="1"
+             AllowAdvertise="no"
+             InstallDefault="local">
+      <ComponentRef Id="STIXGENERAL_BOLDITALIC.OTF"/>
+      <ComponentRef Id="STIXGENERAL_BOLD.OTF"/>
+      <ComponentRef Id="STIXGENERAL_ITALIC.OTF"/>
+      <ComponentRef Id="STIXGENERAL_REGULAR.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSD_BOLD.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSD_REGULAR.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSSM_BOLD.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSSM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSUP_BOLD.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSUPD_BOLD.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSUPD_REGULAR.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSUP_REGULAR.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSUPSM_BOLD.OTF"/>
+      <ComponentRef Id="STIXINTEGRALSUPSM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXNONUNICODE_BOLDITALIC.OTF"/>
+      <ComponentRef Id="STIXNONUNICODE_BOLD.OTF"/>
+      <ComponentRef Id="STIXNONUNICODE_ITALIC.OTF"/>
+      <ComponentRef Id="STIXNONUNICODE_REGULAR.OTF"/>
+      <ComponentRef Id="STIXSIZEFIVESYM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXSIZEFOURSYM_BOLD.OTF"/>
+      <ComponentRef Id="STIXSIZEFOURSYM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXSIZEONESYM_BOLD.OTF"/>
+      <ComponentRef Id="STIXSIZEONESYM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXSIZETHREESYM_BOLD.OTF"/>
+      <ComponentRef Id="STIXSIZETHREESYM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXSIZETWOSYM_BOLD.OTF"/>
+      <ComponentRef Id="STIXSIZETWOSYM_REGULAR.OTF"/>
+      <ComponentRef Id="STIXVARIANTS_BOLD.OTF"/>
+      <ComponentRef Id="STIXVARIANTS_REGULAR.OTF"/>
+    </Feature>
+
+    <UIRef Id="WixUI_FeatureTree"/>
+    <UIRef Id="WixUI_ErrorProgressText"/>
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf"/>
+
+  </Product>
+</Wix>
