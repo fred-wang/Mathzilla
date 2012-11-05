@@ -22,8 +22,11 @@ function convertContentMathMLToPresentationMathML(aDocument)
 
     // If the XSLT processor is not loaded yet, do it now
     if (!gXSLTProcessor) {
-        initXSLTProcessor(aDocument);
-        return;
+        Cu.import(kCtopModule);
+        gXSLTProcessor =
+            Cc["@mozilla.org/document-transformer;1?type=xslt"].
+            createInstance(Ci.nsIXSLTProcessor);
+        gXSLTProcessor.importStylesheet(CtopXSLT);
     }
 
     // Now apply the XSLT stylesheet to each <math> element
@@ -34,19 +37,6 @@ function convertContentMathMLToPresentationMathML(aDocument)
             mathElements[i].parentNode.replaceChild(newMath, mathElements[i]); 
         }
     }
-}
-
-function initXSLTProcessor(aDocument)
-{
-    // Load the ctop XSLT stylesheet
-    Cu.import(kCtopModule);
-    gXSLTProcessor =
-        Cc["@mozilla.org/document-transformer;1?type=xslt"].
-        createInstance(Ci.nsIXSLTProcessor);
-    gXSLTProcessor.importStylesheet(CtopXSLT);
-
-    // Try to convert the page again now that the gXSLTProcessor is ready
-    convertContentMathMLToPresentationMathML(aDocument);
 }
 
 function onDOMContentLoaded(aEvent)
@@ -117,7 +107,7 @@ var windowListener = {
     onOpenWindow: function(aWindow) {
         // Wait for the window to finish loading
         let domWindow = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-            getInterface(Ci.nsIDOMWindowInternal || Ci.nsIDOMWindow);
+            getInterface(Ci.nsIDOMWindow);
         domWindow.addEventListener("load", function() {
             domWindow.removeEventListener("load", arguments.callee, false);
             loadIntoWindow(domWindow);
