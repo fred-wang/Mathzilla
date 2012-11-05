@@ -98,4 +98,5 @@ css:
 	  done; \
 
 xpi:
+	@ echo "Creating the xpi file..."
 	@ cd $(MATHML_FONTS) ; $(ZIP) -r ../$(MATHML_FONTS_XPI) *

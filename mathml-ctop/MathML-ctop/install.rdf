@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!-- -*- Mode: xml; tab-width: 2; indent-tabs-mode:nil; -->
+<!-- vim: set ts=2 et sw=2 tw=80: -->
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+  <Description about="urn:mozilla:install-manifest">
+
+    <em:id>MathML-ctop@mozilla.com</em:id>
+    <em:version>1.0</em:version>
+    <em:type>2</em:type>
+
+    <!-- SeaMonkey  -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
+        <em:minVersion>2.4</em:minVersion>
+        <em:maxVersion>2.15.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+        <em:minVersion>7.0</em:minVersion>
+        <em:maxVersion>19.0a1</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- Android -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
+        <em:minVersion>10.0a1</em:minVersion>
+        <em:maxVersion>19.0a1</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- Mobile -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{a23983c0-fd0e-11dc-95ff-0800200c9a66}</em:id>
+        <em:minVersion>7.0</em:minVersion>
+        <em:maxVersion>19.0a1</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <em:name>MathML-ctop</em:name>
+    <em:bootstrap>true</em:bootstrap>
+    <em:description>Converter from content MathML to presentation MathML</em:description>
+    <em:creator>Frédéric Wang</em:creator>
+    <em:developer>David Carlisle</em:developer>
+
+  </Description>
+</RDF>
