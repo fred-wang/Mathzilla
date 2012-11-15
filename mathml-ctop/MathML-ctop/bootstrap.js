@@ -46,40 +46,6 @@ function onDOMContentLoaded(aEvent)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Implement a basic Web progress listener to track page loadings
-////////////////////////////////////////////////////////////////////////////////
-const STATE_START = Ci.nsIWebProgressListener.STATE_START;
-const STATE_STOP = Ci.nsIWebProgressListener.STATE_STOP;
-
-var gWebProgressListener = {
-    QueryInterface: function(aIID) {
-        if (aIID.equals(Ci.nsIWebProgressListener) ||
-            aIID.equals(Ci.nsISupportsWeakReference) ||
-            aIID.equals(Ci.nsISupports))
-            return this;
-        throw Cr.NS_NOINTERFACE;
-    },
-    onStateChange: function(aBrowser, aWebProgress, aRequest,
-                            aFlag, aStatus) {
-        if(aFlag & STATE_START) {
-            aBrowser.addEventListener("DOMContentLoaded",
-                                      onDOMContentLoaded, false);
-
-        }
-        if(aFlag & STATE_STOP) {
-            aBrowser.removeEventListener("DOMContentLoaded",
-                                         onDOMContentLoaded, false);
-        }
-    },
-    onLocationChange: function(aBrowser, aProgress, aRequest, aURI) { },
-    onProgressChange: function(aBrowser, aWebProgress, aRequest,
-                               curSelf, maxSelf, curTot, maxTot) { },
-    onStatusChange: function(aBrowser, aWebProgress, aRequest,
-                             aStatus, aMessage) { },
-    onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) { }
-};
-
-////////////////////////////////////////////////////////////////////////////////
 // Implement bootstrap main functions and a basic observer for browser windows.
 // The code is based on
 // developer.mozilla.org/en-US/docs/Extensions/Mobile/Addons_developer_guide
@@ -89,7 +55,8 @@ function loadIntoWindow(aWindow) {
     if (aWindow) {
         var tabbrowser = aWindow.document.getElementById("content");
         if (tabbrowser && tabbrowser.tagName == "tabbrowser") {
-            tabbrowser.addTabsProgressListener(gWebProgressListener);
+            tabbrowser.addEventListener("DOMContentLoaded",
+                                        onDOMContentLoaded, false);
         }
     }
 }
@@ -98,7 +65,8 @@ function unloadFromWindow(aWindow) {
     if (aWindow) {
         var tabbrowser = aWindow.document.getElementById("content");
         if (tabbrowser && tabbrowser.tagName == "tabbrowser") {
-            tabbrowser.removeTabsProgressListener(gWebProgressListener);
+            tabbrowser.removeEventListener("DOMContentLoaded",
+                                           onDOMContentLoaded, false);
         }
     }
 }
