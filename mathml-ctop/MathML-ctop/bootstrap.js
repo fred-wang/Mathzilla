@@ -9,9 +9,37 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-const kCtopModule = "chrome://MathML-ctop/content/ctop.jsm";
+// const kCtopModule = "chrome://MathML-ctop/content/ctop.xsl";
+const kCtopModule = "http://www.maths-informatique-jeux.com/ctop.xsl";
+const XMLHttpRequest =
+    Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1");
 
 var gXSLTProcessor = null;
+
+function initXSLTProcessor(aDocument)
+{
+    var xhr = XMLHttpRequest();
+    xhr.open("GET", kCtopModule, true);
+    xhr.onreadystatechange = function (aEvent) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                aDocument.body.style.background = "green";
+                gXSLTProcessor =
+                    Cc["@mozilla.org/document-transformer;1?type=xslt"].
+                    createInstance(Ci.nsIXSLTProcessor);
+                aDocument.title += xhr.responseXML.documentElement.nodeName;
+                gXSLTProcessor.importStylesheet(xhr.responseXML);
+                convertContentMathMLToPresentationMathML(aDocument);
+            } else {
+                aDocument.body.style.background = "red";
+                aDocument.title += " - status: " + xhr.status +
+                    " - statusText["+ xhr.statusText +"]";
+            }
+        }
+    };
+    xhr.responseType = "document";
+    xhr.send(null);
+}
 
 function convertContentMathMLToPresentationMathML(aDocument)
 {
@@ -22,11 +50,8 @@ function convertContentMathMLToPresentationMathML(aDocument)
 
     // If the XSLT processor is not loaded yet, do it now
     if (!gXSLTProcessor) {
-        Cu.import(kCtopModule);
-        gXSLTProcessor =
-            Cc["@mozilla.org/document-transformer;1?type=xslt"].
-            createInstance(Ci.nsIXSLTProcessor);
-        gXSLTProcessor.importStylesheet(CtopXSLT);
+        initXSLTProcessor(aDocument);
+        return;
     }
 
     // Now apply the XSLT stylesheet to each <math> element
@@ -120,11 +145,7 @@ function shutdown(aData, aReason) {
         unloadFromWindow(domWindow);
     }
 
-    // Unload ctop.jsm
-    if (gXSLTProcessor) {
-        Cu.unload(kCtopModule);
-        gXSLTProcessor = null;
-    }
+    gXSLTProcessor = null;
 }
 
 function install(aData, aReason) {}
