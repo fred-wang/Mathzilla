@@ -6,7 +6,7 @@ Mozilla products with new MathML-related features:
   - [Mathzilla collection on AMO](https://addons.mozilla.org/collections/fred_wang/mathzilla/)
     - [MathML-ctop](https://addons.mozilla.org/addon/mathml-ctop/)
     - [MathML-mml3ff](https://addons.mozilla.org/addon/mathml-mml3ff/)
-    - [MathML-fonts(https://addons.mozilla.org/addon/mathml-fonts/)
+    - [MathML-fonts](https://addons.mozilla.org/addon/mathml-fonts/)
     - [FireMath](https://addons.mozilla.org/fr/firefox/addon/firemath/)
   - [MathML-fonts (Windows Installer)](https://developer.mozilla.org/@api/deki/files/6388/=MathML-fonts.msi)
   - [MathML-fonts (experimental Mac Installer)](https://bugzilla.mozilla.org/show_bug.cgi?id=770005#c3)
@@ -51,12 +51,9 @@ Warning: They are no longer maintained. They should probably be rewritten
 and integrated directly to mozilla-central.
 
 1. Install [GNU bison](http://www.gnu.org/software/bison/) if it is not present on your system.
-2. Apply these patches to your sources from mozilla-central:
-    0 A mathparser-base.diff
-    1 A mathparser-utils.diff
-    2 A mathparser-dictionary.diff
-    3 A mathparser-simple.diff
-    4 A mathparser-itex.diff
+2. Apply these patches to your sources from mozilla-central, in that order:
+  mathparser-base.diff, mathparser-utils.diff, A mathparser-dictionary.diff,
+  mathparser-simple.diff A mathparser-itex.diff.
 3. Enable the mathparser extension:
   `ac_add_options --enable-extensions=default,mathparser`
 4. Compile Mozilla
@@ -72,6 +69,7 @@ For itex2MML commands, see
   - <http://golem.ph.utexas.edu/~distler/WebTeX/docs/wtxsec7.html#ARRAY>
 
 The idl interface of nsIMathParser is:
+
     const short MATHPARSER_MODE_SIMPLE     = 0;
     const short MATHPARSER_MODE_ITEX       = 1;
     const short MATHPARSER_NUMBER_OF_MODES = 2;
