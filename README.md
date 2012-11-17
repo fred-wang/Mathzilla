@@ -1,18 +1,27 @@
-********************************************************************************
-xpi
-********************************************************************************
+# Mathzilla
 
-This directory contains packaged add-on files:
+The goal of the Mathzilla Project is to provide add-ons or installers to extend
+Mozilla products with new MathML-related features.
 
-- mathml-fonts.xpi
-- mathparser-0.1.xpi (Linux only)
-- mathzilla-0.1.xpi
+Mathzilla collection on AMO: <https://addons.mozilla.org/collections/fred_wang/mathzilla/>
 
-See http://www.maths-informatique-jeux.com/blog/frederic/?post/2010/11/14/Mozilla-MathML-Add-ons
+MathML-ctop: <https://addons.mozilla.org/addon/mathml-ctop/>
 
-********************************************************************************
-mathml-fonts
-********************************************************************************
+MathML-mml3ff: <https://addons.mozilla.org/addon/mathml-mml3ff/>
+
+MathML-fonts: <https://addons.mozilla.org/addon/mathml-fonts/>, 
+<https://developer.mozilla.org/@api/deki/files/6388/=MathML-fonts.msi>,
+<https://bugzilla.mozilla.org/show_bug.cgi?id=770005#c3>
+
+FireMath: <https://addons.mozilla.org/fr/firefox/addon/firemath/
+
+MathBird: <http://disruptive-innovations.com/zoo/MathBird/>
+
+## mathml-ctop
+
+...
+
+## mathml-fonts
 
 Source of the mathml-fonts extension, which adds mathematical fonts necessary
 for Gecko's MathML engine (in WOFF format) and automatically attachs to each
@@ -26,17 +35,26 @@ To build the extension, move into mathml-fonts/, edit the config file
 (if necessary) and type "make". You will normally find a generated
 mathml-fonts.xpi file.
 
-[1] MathML Fonts: https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts
-[2] sfnt2woff: http://people.mozilla.org/~jkew/woff/
+[1] MathML Fonts: <https://developer.mozilla.org/en/Mozilla_MathML_Project/Fonts>
+[2] sfnt2woff: <http://people.mozilla.org/~jkew/woff/>
 
-********************************************************************************
-mathparser
-********************************************************************************
+### mathml-fonts/MSI
+
+Source of the MathML fonts Windows installer. Instructions on how to build it
+are given in MathML-fonts.wxs.
+
+### mathml-fonts/MacOSX???
+
+See <https://bugzilla.mozilla.org/show_bug.cgi?id=770005>
+
+## mathparser
 
 This is a set of patches to add a mathparser extension to mozilla-central.
+Warning: They are no longer maintained. They should probably be rewritten
+and integrated directly to mozilla-central.
 
 I) Install GNU bison if it is not present on your system.
-  http://www.gnu.org/software/bison/
+   <http://www.gnu.org/software/bison/>
 
 II) Apply these patches to your sources from mozilla-central:
   0 A mathparser-base.diff
@@ -57,9 +75,9 @@ add-on menu. You should also find an XPI in your objdir:
 You can test the parser with mathzilla-parser.xhtml
 
 For itex2MML commands, see
-   http://xbeta.org/wiki/show/itex
-   http://golem.ph.utexas.edu/~distler/blog/itex2MMLcommands.html
-   http://golem.ph.utexas.edu/~distler/WebTeX/docs/wtxsec7.html#ARRAY
+   <http://xbeta.org/wiki/show/itex>
+   <http://golem.ph.utexas.edu/~distler/blog/itex2MMLcommands.html>
+   <http://golem.ph.utexas.edu/~distler/WebTeX/docs/wtxsec7.html#ARRAY>
 
 The idl interface of nsIMathParser is:
   const short MATHPARSER_MODE_SIMPLE     = 0;
@@ -73,22 +91,8 @@ The idl interface of nsIMathParser is:
   nsIDOMElement parse(in nsIDOMDocument aDocument,
                       in AString        aString);
 
-********************************************************************************
-mathzilla
-********************************************************************************
+## mathzilla
 
 Sources for the mathzilla add-on.
 This is experimental, I need to update them to be compatible with future
 versions of Mozilla Add-on SDK.
-
-********************************************************************************
-operatorDictionary.xsl
-********************************************************************************
-
-This is an XSLT Stylesheet to help updating your MathML Operator Dictionary.
-Basic usage is:
-
-wget http://www.w3.org/2003/entities/2007xml/unicode.xml
-xsltproc -o dictionary.xml operatorDictionary.xsl unicode.xml
-
-See http://www.maths-informatique-jeux.com/blog/frederic/?post/2010/06/14/XSLT-Stylesheet-to-help-updating-the-MathML-Operator-Dictionary

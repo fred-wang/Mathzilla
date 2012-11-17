@@ -8,7 +8,7 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
 
-    <em:id>MathML-ctop@mozilla.com</em:id>
+    <em:id>ADD_ON_NAME@mozilla.com</em:id>
     <em:version>1.1</em:version>
     <em:type>2</em:type>
 
@@ -30,9 +30,9 @@
       </Description>
     </em:targetApplication>
 
-    <em:name>MathML-ctop</em:name>
+    <em:name>ADD_ON_NAME</em:name>
     <em:bootstrap>true</em:bootstrap>
-    <em:description>Converter from content MathML to presentation MathML</em:description>
+    <em:description>ADD_ON_DESCRIPTION</em:description>
     <em:creator>Frédéric Wang</em:creator>
     <em:developer>David Carlisle</em:developer>
 

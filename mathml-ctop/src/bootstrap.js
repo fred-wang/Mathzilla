@@ -10,7 +10,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 // URI of the style sheet
-const kXSLTStyleSheet = "chrome://MathML-ctop/content/stylesheet.xsl";
+const kXSLTStyleSheet = "chrome://ADD_ON_NAME/content/stylesheet.xsl";
 
 // Define XMLHttpRequest. This only works correctly with Gecko >= 16. See
 // developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest/Using_XMLHttpRequest
