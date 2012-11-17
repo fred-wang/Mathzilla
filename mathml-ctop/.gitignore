@@ -1,4 +1,5 @@
-MathML-ctop/ctop.jsm
-MathML-ctop/resource/
+MathML-ctop/stylesheet.xsl
+MathML-mml3ff/
 ctop/
 mathml-ctop.xpi
+mathml-mml3ff.xpi

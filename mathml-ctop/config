@@ -1,4 +1,5 @@
 CTOP_REPOSITORY = http://web-xslt.googlecode.com/svn/trunk/ctop/
 PERL = perl
+SED = sed
 SVN = svn
 ZIP = zip
