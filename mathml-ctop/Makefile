@@ -10,7 +10,7 @@ MARKER_ADD_ON_DESCRIPTION = ADD_ON_DESCRIPTION
 SOURCE = src
 
 CTOP_SVN = ctop
-CTOP_CTOP_XSL = ctop.xsl
+CTOP_CTOP_XSL = ctopff.xsl
 CTOP_MML3FF_XSL = mml3ff.xsl
 
 MATHML_CTOP = MathML-ctop
@@ -23,8 +23,6 @@ MATHML_MML3FF_DESC = Add support for MathML 3 features not implemented in Gecko.
 
 INSTALL_RDF = install.rdf
 STYLESHEET_XSL = stylesheet.xsl
-
-.PHONY: clean ctop mml3ff
 
 all: download ctop mml3ff xpi
 
@@ -68,3 +66,5 @@ xpi:
 	@ mkdir -p $(MATHML_MML3FF) ; cd $(MATHML_MML3FF) ; $(ZIP) -r ../$(MATHML_MML3FF_XPI) *
 	@ echo "done."
 	@ echo
+
+.PHONY: clean ctop mml3ff
