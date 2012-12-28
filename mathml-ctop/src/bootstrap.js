@@ -76,7 +76,7 @@ function onDOMContentLoaded(aEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 function loadIntoWindow(aWindow) {
-    if (aWindow) {
+    if (aWindow && aWindow.gBrowser) {
         // Add a listener to the tabbrowser
         aWindow.gBrowser.addEventListener("DOMContentLoaded",
                                           onDOMContentLoaded, false);
@@ -84,7 +84,7 @@ function loadIntoWindow(aWindow) {
 }
 
 function unloadFromWindow(aWindow) {
-    if (aWindow) {
+    if (aWindow && aWindow.gBrowser) {
         // Remove the listener from the tabbrowser
         aWindow.gBrowser.removeEventListener("DOMContentLoaded",
                                              onDOMContentLoaded, false);
