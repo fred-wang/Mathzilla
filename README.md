@@ -7,10 +7,15 @@ Mozilla products with new MathML-related features:
     - [MathML-ctop](https://addons.mozilla.org/addon/mathml-ctop/)
     - [MathML-mml3ff](https://addons.mozilla.org/addon/mathml-mml3ff/)
     - [MathML-fonts](https://addons.mozilla.org/addon/mathml-fonts/)
-    - [FireMath](https://addons.mozilla.org/fr/firefox/addon/firemath/)
+    - [FireMath](https://addons.mozilla.org/firefox/addon/firemath/)
+    - [MathJax Native MathML](https://addons.mozilla.org/firefox/addon/mathjax-native-mathml/)
   - [MathML-fonts (Windows Installer)](https://developer.mozilla.org/@api/deki/files/6388/=MathML-fonts.msi)
   - [MathML-fonts (experimental Mac Installer)](https://bugzilla.mozilla.org/show_bug.cgi?id=770005#c3)
   - [MathBird](http://disruptive-innovations.com/zoo/MathBird/)
+
+## mathjax-native-mathml
+
+Source of the MathJax Native MathML add-on. You need [JetPack](https://developer.mozilla.org/docs/Jetpack) to build it.
 
 ## mathml-ctop
 
