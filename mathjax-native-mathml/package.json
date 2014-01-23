@@ -5,5 +5,5 @@
   "description": "Force MathJax to select the Native MathML output mode.",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "1.0"
+  "version": "1.1"
 }
