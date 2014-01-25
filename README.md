@@ -14,6 +14,11 @@ Mozilla products with new MathML-related features:
   - [MathML-fonts (experimental Mac Installer)](https://bugzilla.mozilla.org/show_bug.cgi?id=770005#c3)
   - [MathBird](http://disruptive-innovations.com/zoo/MathBird/)
 
+## texzilla
+
+Source of the TexZilla add-on. See https://github.com/fred-wang/TeXZilla for
+the parser.
+
 ## mathml-copy
 
 Source of the MathML Copy add-on. You need [JetPack](https://developer.mozilla.org/docs/Jetpack) to build it.

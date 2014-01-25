@@ -1,0 +1,9 @@
+{
+  "name": "texzilla",
+  "title": "texzilla",
+  "id": "jid1-eTgiiG7aEZuPdg",
+  "description": "Add-on giving access to the TeXZilla parser.",
+  "author": "Frédéric Wang",
+  "license": "MPL 2.0",
+  "version": "0.9.1"
+}

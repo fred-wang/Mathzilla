@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32px" height="32px">
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+  <rect width="32px" height="32px" style="fill: #050; stroke: none"/>
+  <switch>
+    <foreignObject width="32" height="32"
+                   requiredExtensions="http://www.w3.org/1998/Math/MathML">
+      <math xmlns="http://www.w3.org/1998/Math/MathML"
+            style="font-family: Neo Euler, STIX;
+                   color: white; font-size: 16px;">
+        <msqrt><mi>n</mi></msqrt>
+      </math>
+    </foreignObject>
+    <text dy="1.5em" style="font-family: Neo Euler, STIX;
+                            font-size: 16px; fill: white">√n</text>
+  </switch>
+</svg>
