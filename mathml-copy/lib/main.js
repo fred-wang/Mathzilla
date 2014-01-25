@@ -8,10 +8,11 @@ var contextMenu = require("sdk/context-menu");
 var data        = require("sdk/self").data;
 var clipboard   = require("sdk/clipboard");
 var copyMathML  = require("copy-mathml");
+var _           = require("sdk/l10n").get;
 
 // Add a menu item to copy the <math> source and element.
 contextMenu.Item({
-  label: "Copy MathML Formula",
+  label: _("copy_mathml"),
   context: contextMenu.SelectorContext('math'),
   contentScriptFile: data.url("get-mathml-source.js"),
   onMessage: function(aSource) {
@@ -23,7 +24,7 @@ contextMenu.Item({
 // XXXfredw For Firefox >= 29, use PredicateContext to only show this menu item
 // when a TeX annotation is actually available.
 contextMenu.Item({
-  label: "Copy TeX Source",
+  label: _("copy_tex"),
   context: contextMenu.SelectorContext('math'),
   contentScriptFile: data.url("get-mathml-source.js"),
   onMessage: function(aSource) {

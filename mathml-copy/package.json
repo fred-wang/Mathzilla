@@ -2,8 +2,8 @@
   "name": "mathml-copy",
   "title": "MathML Copy",
   "id": "jid1-u5w9ZJYgijZpHA",
-  "description": "Add menu items to copy MathML and TeX formulas.",
+  "description": "Add menu items to copy MathML and TeX formulas into the clipboard.",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "0.1"
+  "version": "0.2"
 }
