@@ -5347,7 +5347,9 @@ return new Parser;
 
 if (typeof require !== "undefined" && typeof exports !== "undefined") {
 
-  exports.DOMParser = TeXZilla.DOMParser;
+  exports.setDOMParser = function (aDOMParser) {
+    TeXZilla.DOMParser = aDOMParser;
+  }
 
   exports.getTeXSource = function () {
     return TeXZilla.getTeXSource.apply(TeXZilla, arguments);

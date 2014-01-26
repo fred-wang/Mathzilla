@@ -10,6 +10,7 @@ Mozilla products with new MathML-related features:
     - [FireMath](https://addons.mozilla.org/firefox/addon/firemath/)
     - [MathJax Native MathML](https://addons.mozilla.org/firefox/addon/mathjax-native-mathml/)
     - [MathML Copy](https://addons.mozilla.org/en-US/firefox/addon/mathml-copy/)
+    - [TeXZilla](https://addons.mozilla.org/en-US/firefox/addon/texzilla/)
   - [MathML-fonts (Windows Installer)](https://developer.mozilla.org/@api/deki/files/6388/=MathML-fonts.msi)
   - [MathML-fonts (experimental Mac Installer)](https://bugzilla.mozilla.org/show_bug.cgi?id=770005#c3)
   - [MathBird](http://disruptive-innovations.com/zoo/MathBird/)
