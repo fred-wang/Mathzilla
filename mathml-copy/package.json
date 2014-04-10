@@ -5,5 +5,5 @@
   "description": "Add menu items to copy MathML and TeX formulas into the clipboard.",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "0.2"
+  "version": "0.4"
 }
