@@ -10,7 +10,7 @@ var tabs    = require("sdk/tabs");
 var widget = widgets.Widget({
   id: "texzilla-editor",
   label: "TeXZilla Editor",
-  contentURL: data.url("logo.svg"),
+  contentURL: data.url("logo.png"),
   onClick: function() {
     tabs.open(data.url("index.html"));
   }
