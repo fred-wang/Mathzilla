@@ -56,6 +56,10 @@ xMathJaxConfig.textContent =
     "MathJax.OutputJax.NativeMML.Augment({" +
       "preTranslate: " + newPreTranslate.toString() +
     "});" +
+    "MathJax.OutputJax.NativeMML.ffTableWidthBug = false;" +
+    "MathJax.OutputJax.NativeMML.forceReflow = false;" +
     "MathJax.OutputJax.NativeMML.widthBug = false;" +
+    "MathJax.OutputJax.NativeMML.spaceWidthBug = false;" +
+    "MathJax.OutputJax.NativeMML.mtdWidthBug = false;" +
   "})";
 document.head.appendChild(xMathJaxConfig);
