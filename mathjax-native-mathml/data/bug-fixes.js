@@ -46,18 +46,21 @@ self.port.on("set-bug-fixes", function(aBugConfig) {
       "MathJax.OutputJax.NativeMML.widthBug = false;" +
       "MathJax.OutputJax.NativeMML.spaceWidthBug = false;" +
       "MathJax.OutputJax.NativeMML.mtdWidthBug = false;" +
-    "})";
+    "});";
   }
 
   if (aBugConfig.disableMathJaxMML2jax) {
-    // Make the PreProcess function of mml2jax a noop
-    // FIXME: can we do that without forcing the loading of mml2jax.js?
+    // Unregister the mml2jax preprocessor once the extensions are loaded.
     xMathJaxConfig.textContent +=
-    "MathJax.Ajax.LoadHook(\"[MathJax]/extensions/mml2jax.js\", function () {" +
-      "MathJax.Extension.mml2jax.Augment({" +
-        "PreProcess: function () {}" +
-      "});" +
-    "})";
+    "MathJax.Hub.Register.StartupHook(\"End Extensions\", function () {" +
+      "if (MathJax.Extension.mml2jax) {" +
+      "  for (var i=0,m=MathJax.Hub.preProcessors.hooks.length; i < m; i++) {" +
+      "    if (MathJax.Hub.preProcessors.hooks[i].hook ===" +
+      "        MathJax.Extension.mml2jax.PreProcess)" +
+      "      { MathJax.Hub.preProcessors.hooks.splice(i,1); i--; m--; }" +
+      "  }" +
+      "}" +
+    "});";
   }
 
   if (document.head) {
