@@ -25,11 +25,15 @@ pageMod.PageMod({
   }
 });
 
-if (prefs["fixMathJaxBugs"]) {
-  // Modify MathJax's code to fix rendering and performance bugs.
-  pageMod.PageMod({
-    include: "*",
-    contentScriptFile: data.url("bug-fixes.js"),
-    contentScriptWhen: "start"
-  });
-}
+// Modify MathJax's code to fix performance and rendering issues.
+pageMod.PageMod({
+  include: "*",
+  contentScriptFile: data.url("bug-fixes.js"),
+  contentScriptWhen: "start",
+  onAttach: function(worker) {
+    worker.port.emit('set-bug-fixes', {
+      disableMathJaxMML2jax: prefs["disableMathJaxMML2jax"],
+      fixMathJaxNativeMML: prefs["fixMathJaxNativeMML"]
+    });
+  }
+});
