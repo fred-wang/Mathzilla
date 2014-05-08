@@ -2,8 +2,30 @@
   "name": "mathjax-native-mathml",
   "title": "MathJax Native MathML",
   "id": "jid1-fGtBdrROY6E1gA",
-  "description": "Force MathJax to select the Native MathML output mode.",
+  "description": "This add-on forces MathJax to select the Native MathML output mode. It can also fix some rendering/performance bugs in MathJax and prevent it from overriding the browser user interface.",
   "author": "Frédéric Wang",
+  "translators": ["Frédéric Wang"],
   "license": "MPL 2.0",
-  "version": "1.2"
+  "version": "1.4",
+  "preferences": [{
+        "name": "useBrowserContext",
+        "title": "useBrowserContext_title",
+        "description": "useBrowserContext_description",
+        "type": "bool",
+        "value": true
+    },
+    {
+        "name": "disableMathJaxZoom",   
+        "title": "disableMathJaxZoom_title",
+        "description": "disableMathJaxZoom_description",
+        "type": "bool",
+        "value": true
+    },
+    {
+        "name": "fixMathJaxBugs",
+        "title": "fixMathJaxBugs_title",
+        "description": "fixMathJaxBugs_description",
+        "type": "bool",
+        "value": true
+    }]
 }
