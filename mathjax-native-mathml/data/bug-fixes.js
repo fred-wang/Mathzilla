@@ -63,7 +63,7 @@ self.port.on("set-bug-fixes", function(aBugConfig) {
     "});";
   }
 
-  if (document.head) {
+  if (document.head && xMathJaxConfig.textContent !== "") {
     document.head.appendChild(xMathJaxConfig);
   }
 });
