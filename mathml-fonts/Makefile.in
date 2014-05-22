@@ -1,0 +1,52 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MATHML_FONTS = MathML-fonts
+MATHML_FONTS_GH = $(MATHML_FONTS)/resource/MathFonts-gh-pages
+MATHML_FONTS_URI=https://github.com/fred-wang/MathFonts/archive/gh-pages.zip
+MATHML_FONTS_XPI = mathml-fonts.xpi
+MATHML_FONTS_ZIP = mathml-fonts.zip
+
+all: $(MATHML_FONTS_XPI)
+
+clean:
+	@ echo "Removing temporary files..."
+	@ rm -rf $(MATHML_FONTS_ZIP) $(MATHML_FONTS)/resource/LatinModern \
+		$(MATHML_FONTS)/resource/XITS
+
+distclean: clean
+	@ echo "Removing all untracked files..."
+	@ rm Makefile autom4te.cache config.log config.status mathml-fonts.xpi \
+		$(MATHML_FONTS_GH)
+
+$(MATHML_FONTS_ZIP):
+	@ echo "Downloading MathML fonts..."
+	@ @WGET@ $(MATHML_FONTS_URI) -O $(MATHML_FONTS_ZIP)
+
+$(MATHML_FONTS_GH): $(MATHML_FONTS_ZIP)
+	@ echo "Extracting MathML fonts..."
+	@ @UNZIP@ -o $(MATHML_FONTS_ZIP) -d $(MATHML_FONTS)/resource
+
+$(MATHML_FONTS)/resource/LatinModern: $(MATHML_FONTS_GH)
+	@ echo "Preparing LatinModern..."
+	@ cp -r $(MATHML_FONTS_GH)/LatinModern $(MATHML_FONTS)/resource/
+	@ cd $(MATHML_FONTS)/resource/LatinModern/; rm -f *.css lmroman*.woff \
+		MANIFEST-Latin-Modern.TXT README-Latin-Modern.TXT INSTALL.txt \
+		lm-hist.txt
+
+	 # Workaround for the ascent/descent bug
+	@ cd $(MATHML_FONTS)/resource/LatinModern/; rm MANIFEST-Latin-Modern-Math.txt README-Latin-Modern-Math.txt; mv latinmodern-math.woff latinmodern-math-AscentDescent.woff
+	@ @PYTHON@ fix-ascent-descent.py
+	@ 
+
+$(MATHML_FONTS)/resource/XITS: $(MATHML_FONTS_GH)
+	@ echo "Preparing XITS..."
+	@ cp -r $(MATHML_FONTS_GH)/XITS $(MATHML_FONTS)/resource/
+	@ cd $(MATHML_FONTS)/resource/XITS/; rm -f *.css \
+		xits-regular.woff xits-mathbold.woff \
+		xits-bold.woff xits-italic.woff xits-bolditalic.woff
+
+$(MATHML_FONTS_XPI): $(MATHML_FONTS)/resource/LatinModern $(MATHML_FONTS)/resource/XITS $(MATHML_FONTS)/bootstrap.js $(MATHML_FONTS)/install.rdf $(MATHML_FONTS)/resource/mathml.css
+	@ echo "Creating the xpi file..."
+	@ cd $(MATHML_FONTS) ; @ZIP@ -r ../$(MATHML_FONTS_XPI) *

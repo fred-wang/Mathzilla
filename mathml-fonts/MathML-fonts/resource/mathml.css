@@ -1,0 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Latin Modern Math. This font does not work on Windows (bug 1014498) so we can
+   only use a modified WOFF version. */
+@font-face {
+  font-family: 'Latin Modern Math';
+  src: url('LatinModern/latinmodern-math-AscentDescent.woff');
+}
+
+/* XITS (fork of STIX with many bugs fixed) */
+@font-face {
+    font-family: 'XITS Math';
+    src: local('XITS Math'), local('XITSMath'), url('XITS/xits-math.woff');
+}
+
+/* Redefine the deprecated MathJax_Main to use Latin Modern Math instead
+   (the font is still specified in mathml.css in Gecko 31) */
+@font-face {
+  font-family: 'MathJax_Main';
+  src: url('LatinModern/latinmodern-math-AscentDescent.woff');
+}
+
+/* Redefine the deprecated STIXGeneral to use XITS instead
+   (the font is still specified in mathml.css in Gecko 31). */
+@font-face {
+  font-family: 'STIXGeneral';
+  src: local('XITS Math'), local('XITSMath'), url('XITS/xits-math.woff');
+}

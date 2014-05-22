@@ -1,0 +1,4 @@
+This contains the source of the MSI to install MathML fonts. This package is
+no longer maintained. Cambria Math is installed by default on Windows 7 and
+higher and is usable with Firefox 31 or higher, so this installer is becoming
+obsolete.

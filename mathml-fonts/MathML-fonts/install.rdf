@@ -9,15 +9,15 @@
   <Description about="urn:mozilla:install-manifest">
 
     <em:id>MathML-fonts@mozilla.com</em:id>
-    <em:version>1.1</em:version>
+    <em:version>2.0</em:version>
     <em:type>2</em:type>
 
     <!-- Toolkit -->
     <em:targetApplication>
       <Description>
         <em:id>toolkit@mozilla.org</em:id>
-        <em:minVersion>7.0</em:minVersion>
-        <em:maxVersion>19.0a1</em:maxVersion>
+        <em:minVersion>31.0</em:minVersion>
+        <em:maxVersion>33.0</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -25,8 +25,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
-        <em:minVersion>2.4</em:minVersion>
-        <em:maxVersion>2.15.*</em:maxVersion>
+        <em:minVersion>2.28</em:minVersion>
+        <em:maxVersion>2.30</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -34,8 +34,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-        <em:minVersion>7.0</em:minVersion>
-        <em:maxVersion>19.0a1</em:maxVersion>
+        <em:minVersion>31.0</em:minVersion>
+        <em:maxVersion>33.0</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -43,8 +43,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-        <em:minVersion>7.0</em:minVersion>
-        <em:maxVersion>19.0a1</em:maxVersion>
+        <em:minVersion>31.0</em:minVersion>
+        <em:maxVersion>33.0</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -52,8 +52,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
-        <em:minVersion>10.0a1</em:minVersion>
-        <em:maxVersion>19.0a1</em:maxVersion>
+        <em:minVersion>31.0</em:minVersion>
+        <em:maxVersion>33.0</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -61,8 +61,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{a23983c0-fd0e-11dc-95ff-0800200c9a66}</em:id>
-        <em:minVersion>7.0</em:minVersion>
-        <em:maxVersion>19.0a1</em:maxVersion>
+        <em:minVersion>31.0</em:minVersion>
+        <em:maxVersion>33.0</em:maxVersion>
       </Description>
     </em:targetApplication>
 

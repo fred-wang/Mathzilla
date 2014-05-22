@@ -1,5 +1,9 @@
-MathML-fonts/resource/
-font-file-list*
-mathml-fonts.zip
-mathml.css
+Makefile
+MathML-fonts/resource/LatinModern
+MathML-fonts/resource/MathFonts-gh-pages
+MathML-fonts/resource/XITS
+autom4te.cache
+config.log
+config.status
 mathml-fonts.xpi
+mathml-fonts.zip
