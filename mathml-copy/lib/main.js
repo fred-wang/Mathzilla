@@ -20,16 +20,12 @@ contextMenu.Item({
   }
 });
 
-// Add a menu item to copy the TeX annotation attached to a <math> element.
-// XXXfredw For Firefox >= 29, use PredicateContext to only show this menu item
-// when a TeX annotation is actually available.
+// Add a menu item to copy the TeX annotation attached to a <semantics> element.
 contextMenu.Item({
   label: _("copy_tex"),
-  context: contextMenu.SelectorContext('math'),
-  contentScriptFile: data.url("get-mathml-source.js"),
+  context: contextMenu.SelectorContext('semantics'),
+  contentScriptFile: data.url("get-tex-source.js"),
   onMessage: function(aSource) {
-    copyMathML.copy(aSource,
-                    ["TeX", "LaTeX", "text/x-tex", "text/x-latex",
-                     "application/x-tex", "application/x-latex"]);
+    clipboard.set(aSource);
   }
 });
