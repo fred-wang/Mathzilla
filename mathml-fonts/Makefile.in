@@ -28,7 +28,7 @@ $(MATHML_FONTS_GH): $(MATHML_FONTS_ZIP)
 	@ echo "Extracting MathML fonts..."
 	@ @UNZIP@ -o $(MATHML_FONTS_ZIP) -d $(MATHML_FONTS)/resource
 
-$(MATHML_FONTS)/resource/LatinModern: $(MATHML_FONTS_GH)
+$(MATHML_FONTS)/resource/LatinModern: $(MATHML_FONTS_GH) fix-ascent-descent.py
 	@ echo "Preparing LatinModern..."
 	@ cp -r $(MATHML_FONTS_GH)/LatinModern $(MATHML_FONTS)/resource/
 	@ cd $(MATHML_FONTS)/resource/LatinModern/; rm -f *.css lmroman*.woff \
@@ -38,7 +38,6 @@ $(MATHML_FONTS)/resource/LatinModern: $(MATHML_FONTS_GH)
 	 # Workaround for the ascent/descent bug
 	@ cd $(MATHML_FONTS)/resource/LatinModern/; rm MANIFEST-Latin-Modern-Math.txt README-Latin-Modern-Math.txt; mv latinmodern-math.woff latinmodern-math-AscentDescent.woff
 	@ @PYTHON@ fix-ascent-descent.py
-	@ 
 
 $(MATHML_FONTS)/resource/XITS: $(MATHML_FONTS_GH)
 	@ echo "Preparing XITS..."
