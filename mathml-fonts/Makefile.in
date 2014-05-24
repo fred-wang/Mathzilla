@@ -49,4 +49,4 @@ $(MATHML_FONTS)/resource/XITS: $(MATHML_FONTS_GH)
 
 $(MATHML_FONTS_XPI): $(MATHML_FONTS)/resource/LatinModern $(MATHML_FONTS)/resource/XITS $(MATHML_FONTS)/bootstrap.js $(MATHML_FONTS)/install.rdf $(MATHML_FONTS)/resource/mathml.css
 	@ echo "Creating the xpi file..."
-	@ cd $(MATHML_FONTS) ; @ZIP@ -r ../$(MATHML_FONTS_XPI) *
+	@ cd $(MATHML_FONTS) ; @ZIP@ -r ../$(MATHML_FONTS_XPI) install.rdf bootstrap.js resource/mathml.css resource/LatinModern resource/XITS

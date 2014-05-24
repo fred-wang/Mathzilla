@@ -9,22 +9,8 @@
   src: url('LatinModern/latinmodern-math-AscentDescent.woff');
 }
 
-/* XITS (fork of STIX with many bugs fixed) */
+/* XITS. This is a fork of STIX with many bugs fixed. */
 @font-face {
     font-family: 'XITS Math';
     src: local('XITS Math'), local('XITSMath'), url('XITS/xits-math.woff');
-}
-
-/* Redefine the deprecated MathJax_Main to use Latin Modern Math instead
-   (the font is still specified in mathml.css in Gecko 31) */
-@font-face {
-  font-family: 'MathJax_Main';
-  src: url('LatinModern/latinmodern-math-AscentDescent.woff');
-}
-
-/* Redefine the deprecated STIXGeneral to use XITS instead
-   (the font is still specified in mathml.css in Gecko 31). */
-@font-face {
-  font-family: 'STIXGeneral';
-  src: local('XITS Math'), local('XITSMath'), url('XITS/xits-math.woff');
 }
