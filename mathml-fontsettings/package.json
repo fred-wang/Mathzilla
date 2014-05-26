@@ -1,0 +1,29 @@
+{
+  "name": "mathml-fontsettings",
+  "title": "MathML Font Settings",
+  "id": "jid1-EQE4AIXPwNXvEA",
+  "description": "This add-on allows configuring MathML font settings.",
+  "author": "Frédéric Wang",
+  "translators": ["Frédéric Wang"],
+  "license": "MPL 2.0",
+  "version": "0.1",
+  "preferences": [{
+        "name": "mathFontFamily",
+        "title": "mathFontFamily_title",
+        "description": "mathFontFamily_description",
+        "type": "string",
+        "value": ""
+    }, {
+        "name": "mathFontScale",
+        "title": "mathFontScale_title",
+        "description": "mathFontScale_description",
+        "type": "integer",
+        "value": 100
+    }, {
+        "name": "mathFontImportant",
+        "title": "mathFontImportant_title",
+        "description": "mathFontImportant_description",
+        "type": "bool",
+        "value": true
+    }]
+}
