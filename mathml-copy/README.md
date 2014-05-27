@@ -1,6 +1,6 @@
-# MathML font settings
+# mathml-copy
 
-This directory contains the source of the [mathjax-native-mathml add-on](https://addons.mozilla.org/en-US/firefox/addon/mathml-fontsettings/) which is built with the
+This directory contains the source of the [MathML Copy add-on](https://addons.mozilla.org/en-US/firefox/addon/mathml-copy/) which is built with the
 [Add-on SDK](https://developer.mozilla.org/en-US/Add-ons/SDK).
 
 Users should report any bug to the
