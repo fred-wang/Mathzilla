@@ -1,0 +1,16 @@
+{
+  "name": "image-to-mathml",
+  "title": "Image to MathML",
+  "id": "jid1-0pa82e1f8qz4EQ",
+  "description": "Try to convert images of mathematical formulas into MathML.",
+  "author": "Frédéric Wang",
+  "license": "MPL 2.0",
+  "version": "0.1",
+  "preferences": [{
+        "name": "enableDebug",
+        "title": "enableDebug_title",
+        "description": "enableDebug_description",
+        "type": "bool",
+        "value": true
+  }]
+}
