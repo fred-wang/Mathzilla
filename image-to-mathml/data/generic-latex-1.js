@@ -13,5 +13,5 @@
 var images = document.body.querySelectorAll(self.options), i, img;
 for (i = 0; i < images.length; i++) {
   img = images[i];
-  LaTeXMLRequest(img, img.alt, null);
+  fromLaTeXRequest(img, img.alt, null);
 }

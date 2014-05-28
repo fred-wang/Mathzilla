@@ -10,14 +10,15 @@
 // specified by a list of CSS selectors, the LaTeX source is given in the alt
 // text with delimiters and display="block" is added when necessary.
 
-var images = document.body.querySelectorAll(self.options), i, img, alt, match;
+var images = document.body.querySelectorAll(self.options), i, img, alt, m;
 for (i = 0; i < images.length; i++) {
   img = images[i]; alt = img.alt;
-  if (match = alt.match(/^\s*\$\$([^]+)\$\$\s*$/)) {
-    LaTeXMLRequest(img, match[1], function(aMath) {
+  if ((m = alt.match(/^\s*\$\$([^]+)\$\$\s*$/)) ||
+      (m = alt.match(/^\s*\\begin{displaymath}([^]+)\\end{displaymath}\s*$/))) {
+    fromLaTeXRequest(img, m[1], function(aMath) {
       aMath.setAttribute("display", "block");
     });
-  } else if (match = alt.match(/^\s*\$([^]+)\$\s*$/)) {
-    LaTeXMLRequest(img, match[1], null);
+  } else if (m = alt.match(/^\s*\$([^]+)\$\s*$/)) {
+    fromLaTeXRequest(img, m[1], null);
   }
 }

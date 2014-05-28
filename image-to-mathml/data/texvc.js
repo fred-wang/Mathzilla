@@ -13,7 +13,7 @@
 var images = document.body.querySelectorAll("img.tex"), i, img;
 for (i = 0; i < images.length; i++) {
   img = images[i];
-  LaTeXMLRequest(img, img.alt, function(aMath) {
+  fromLaTeXRequest(img, img.alt, function(aMath) {
     aMath.setAttribute("displaystyle", "true");
   });
 }

@@ -9,24 +9,35 @@
 var Request = require("sdk/request").Request,
   prefs = require('sdk/simple-prefs').prefs;
 
-var gMathLaTeXMLUrl = "http://gw125.iu.xsede.org:8888",
-  gMathDefaultLaTeXMLSetting = "format=xhtml&whatsin=math&whatsout=math&pmml&cmml&nodefaultresources&preload=LaTeX.pool&preload=article.cls&preload=amsmath.sty&preload=amsthm.sty&preload=amstext.sty&preload=amssymb.sty&preload=eucal.sty&preload=%5Bdvipsnames%5Dxcolor.sty&preload=url.sty&preload=hyperref.sty&preload=%5Bids%5Dlatexml.sty&preload=texvc";
+function getLaTeXMLUrl(aLaTeX)
+{
+  var LaTeXMLSetting = "format=xhtml&whatsin=math&whatsout=math&pmml&nodefaultresources&preload=LaTeX.pool&preload=article.cls&preload=amsmath.sty&preload=amsthm.sty&preload=amstext.sty&preload=amssymb.sty&preload=eucal.sty&preload=%5Bdvipsnames%5Dxcolor.sty&preload=url.sty&preload=hyperref.sty&preload=%5Bids%5Dlatexml.sty&preload=texvc";
+  return prefs["LaTeXMLUrl"] + "?" + LaTeXMLSetting + "&tex=literal:" +
+    encodeURIComponent(aLaTeX);
+}
 
-exports.addWorker = function(aWorker) {
-  aWorker.port.on("latexml-request", function(aLaTeX) {
-    Request({
-      url: gMathLaTeXMLUrl + "?" + gMathDefaultLaTeXMLSetting +
-           "&tex=literal:" + encodeURIComponent(aLaTeX),
-      onComplete: function (aResponse) {
-        var json = aResponse.json;
-        if (!json.result && prefs["enableDebug"]) {
-          console.warn("LaTeXML failed to convert '" + aLaTeX + "'\n" +
-                       JSON.stringify(json) + "\n" +
-                       "***********************************************");
+function sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempt) {
+  Request({
+    url: getLaTeXMLUrl(aLaTeX),
+    onComplete: function (aResponse) {
+      var json = aResponse.json;
+      if (!json || !json.result) {
+        // Conversion failed. Either we try again or we give up and submit an
+        // empty reply.
+        if (aMaxAttempt > 0) {
+          sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempt - 1);
+          return;
         }
-        json.input = aLaTeX;
-        aWorker.port.emit("latexml-response", json);
+        console.warn("LaTeXML failed to convert '" + aLaTeX + "'\n" +
+                     aResponse.text);
+        json = {};
       }
-    }).post();
-  });
+      json.input = aLaTeX;
+      aCallback(json);
+    }
+  }).post();
+}
+
+exports.fromLaTeX = function(aWorker, aLaTeX, aCallback) {
+  sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, prefs["LaTeXMLMaxAttempt"]);
 }

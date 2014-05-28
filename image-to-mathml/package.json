@@ -7,10 +7,34 @@
   "license": "MPL 2.0",
   "version": "0.1",
   "preferences": [{
-        "name": "enableDebug",
-        "title": "enableDebug_title",
-        "description": "enableDebug_description",
-        "type": "bool",
-        "value": true
+    "name": "strategy",
+    "title": "strategy_title",
+    "description": "strategy_description",
+    "type": "menulist",
+    "value": "TL",
+    "options": [
+      { "value": "L", "label": "LaTeXML" },
+      { "value": "T", "label": "TeXZilla" },
+      { "value": "TL", "label": "TeXZilla, LaTeXML" },
+      { "value": "LT", "label": "LaTeXML, TeXZilla" }
+    ]
+  }, {
+    "name": "LaTeXMLUrl",
+    "title": "LaTeXMLUrl_title",
+    "description": "LaTeXMLUrl_description",
+    "type": "string",
+    "value": "http://gw125.iu.xsede.org:8888"
+  }, {
+    "name": "LaTeXMLMaxAttempt",
+    "title": "LaTeXMLMaxAttempt_title",
+    "description": "LaTeXMLMaxAttempt_description",
+    "type": "integer",
+    "value": 5
+  }, {
+    "name": "LaTeXMLCache",
+    "title": "LaTeXMLCache_title",
+    "description": "LaTeXMLCache_description",
+    "type": "bool",
+    "value": true
   }]
 }

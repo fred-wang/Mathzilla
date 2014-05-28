@@ -14,28 +14,28 @@
 //
 // where image is the <img> element to convert into a <math> element and the
 // callback function takes the resulting <math> element as argument.
-let pendingLaTeXMLRequest = {};
+let pendingFromLaTeXRequest = {};
 
-// Send a request to LaTeXML to convert LaTeX to MathML.
-function LaTeXMLRequest(aImage, aLaTeX, aCallback) {
+// Send a request to convert LaTeX to MathML.
+function fromLaTeXRequest(aImage, aLaTeX, aCallback) {
   var data = { image: aImage, callback: aCallback };
-  if (pendingLaTeXMLRequest[aLaTeX]) {
+  if (pendingFromLaTeXRequest[aLaTeX]) {
     // The same request has already been sent in a previous call. Let's add this
     // to the array of JSON objects.
-    pendingLaTeXMLRequest[aLaTeX].push(data);
+    pendingFromLaTeXRequest[aLaTeX].push(data);
   } else {
     // Create a one-element array and send a new request.
-    pendingLaTeXMLRequest[aLaTeX] = [data];
-    self.port.emit("latexml-request", aLaTeX);
+    pendingFromLaTeXRequest[aLaTeX] = [data];
+    self.port.emit("fromLaTeX-request", aLaTeX);
   }
 }
 
-// Handle the LaTeXML response.
-self.port.on("latexml-response", function (aResponse) {
+// Handle the fromLaTeX response.
+self.port.on("fromLaTeX-response", function (aResponse) {
   var JSONarray, data, previous, parent, i;
   if (aResponse.result) {
     // Conversion succeeded. Replace all the images by <math> elements.
-    JSONarray = pendingLaTeXMLRequest[aResponse.input];
+    JSONarray = pendingFromLaTeXRequest[aResponse.input];
     for (i = 0; i < JSONarray.length; i++) {
       data = JSONarray[i];
       previous = data.image.previousElementSibling;
@@ -49,5 +49,5 @@ self.port.on("latexml-response", function (aResponse) {
     }
   }
   // Remove this request.
-  delete pendingLaTeXMLRequest[aResponse.input];
+  delete pendingFromLaTeXRequest[aResponse.input];
 });
