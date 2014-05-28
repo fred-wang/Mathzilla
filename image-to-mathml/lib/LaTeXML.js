@@ -4,6 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 // This modules communicates with the LaTeXML Web service.
 
 var Request = require("sdk/request").Request,
@@ -92,8 +94,8 @@ function sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempts) {
           sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempts - 1);
           return;
         }
-        console.warn("LaTeXML failed to convert '" + aLaTeX + "'\n" +
-                     aResponse.text);
+        console.error("LaTeXML failed to convert '" + aLaTeX + "'\n" +
+                      aResponse.text);
         json = {};
       } else if (prefs["LaTeXMLCache"]) {
         // Cache the result.
