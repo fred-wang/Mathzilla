@@ -11,12 +11,12 @@
     "title": "strategy_title",
     "description": "strategy_description",
     "type": "menulist",
-    "value": "TL",
+    "value": "L",
     "options": [
-      { "value": "L", "label": "LaTeXML" },
-      { "value": "T", "label": "TeXZilla" },
-      { "value": "TL", "label": "TeXZilla, LaTeXML" },
-      { "value": "LT", "label": "LaTeXML, TeXZilla" }
+      { "value": "L", "label": "LaTeXML only" },
+      { "value": "T", "label": "TeXZilla only" },
+      { "value": "TL", "label": "TeXZilla followed by LaTeXML" },
+      { "value": "LT", "label": "LaTeXML followed by TeXZilla" }
     ]
   }, {
     "name": "LaTeXMLUrl",
@@ -25,8 +25,8 @@
     "type": "string",
     "value": "http://gw125.iu.xsede.org:8888"
   }, {
-    "name": "LaTeXMLMaxAttempt",
-    "title": "LaTeXMLMaxAttempt_title",
+    "name": "LaTeXMLMaxAttempts",
+    "title": "LaTeXMLMaxAttempts_title",
     "description": "LaTeXMLMaxAttempt_description",
     "type": "integer",
     "value": 5

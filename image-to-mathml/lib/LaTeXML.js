@@ -7,8 +7,71 @@
 // This modules communicates with the LaTeXML Web service.
 
 var Request = require("sdk/request").Request,
-  prefs = require('sdk/simple-prefs').prefs;
+  simplePrefs = require('sdk/simple-prefs'),
+  prefs = simplePrefs.prefs,
+  { indexedDB } = require('sdk/indexed-db');
 
+// Initialize a database to store MathML output.
+var database = {};
+database.onerror = function(e) {
+  console.error(e.value);
+}
+var databaseVersion = 1;
+var request = indexedDB.open("LaTeXML", databaseVersion);
+request.onerror = database.onerror;
+request.onsuccess = function(e) {
+  database.db = e.target.result;
+};
+request.onupgradeneeded = function(e) {
+  var db = e.target.result;
+  e.target.transaction.onerror = database.onerror;
+  if(db.objectStoreNames.contains("MathML")) {
+    db.deleteObjectStore("MathML");
+  }
+  db.createObjectStore("MathML");
+};
+
+database.clearMathML = function()
+{
+  if (!this.db) {
+    return;
+  }
+  this.db.transaction(["MathML"], "readwrite").objectStore("MathML").clear();
+}
+
+database.addMathML = function(aLaTeX, aMathML)
+{
+  if (!this.db) {
+    return;
+  }
+  var store = this.db.
+    transaction(["MathML"], "readwrite").objectStore("MathML");
+  var request = store.put(aMathML, aLaTeX);
+  request.onerror = this.onerror;
+};
+
+database.getMathML = function(aLaTeX, aCallback)
+{
+  if (!this.db) {
+    aCallback(null);
+  }
+  var store = this.db.
+    transaction(["MathML"], "readwrite").objectStore("MathML");
+  var request = store.get(aLaTeX);
+  request.onerror = this.onerror;
+  request.onsuccess = function() {
+    aCallback(request.result);
+  }
+}
+
+// Clear the MathML storage if the user disable the LaTeXMLCache option.
+simplePrefs.on("LaTeXMLCache", function() {
+  if (!prefs["LaTeXMLCache"]) {
+    database.clearMathML();
+  }
+});
+
+// Determine the URL for the POST request.
 function getLaTeXMLUrl(aLaTeX)
 {
   var LaTeXMLSetting = "format=xhtml&whatsin=math&whatsout=math&pmml&nodefaultresources&preload=LaTeX.pool&preload=article.cls&preload=amsmath.sty&preload=amsthm.sty&preload=amstext.sty&preload=amssymb.sty&preload=eucal.sty&preload=%5Bdvipsnames%5Dxcolor.sty&preload=url.sty&preload=hyperref.sty&preload=%5Bids%5Dlatexml.sty&preload=texvc";
@@ -16,7 +79,8 @@ function getLaTeXMLUrl(aLaTeX)
     encodeURIComponent(aLaTeX);
 }
 
-function sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempt) {
+// Send the LaTeXML request.
+function sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempts) {
   Request({
     url: getLaTeXMLUrl(aLaTeX),
     onComplete: function (aResponse) {
@@ -24,20 +88,31 @@ function sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempt) {
       if (!json || !json.result) {
         // Conversion failed. Either we try again or we give up and submit an
         // empty reply.
-        if (aMaxAttempt > 0) {
-          sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempt - 1);
+        if (aMaxAttempts > 0) {
+          sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, aMaxAttempts - 1);
           return;
         }
         console.warn("LaTeXML failed to convert '" + aLaTeX + "'\n" +
                      aResponse.text);
         json = {};
+      } else if (prefs["LaTeXMLCache"]) {
+        // Cache the result.
+        database.addMathML(aLaTeX, json.result);
       }
-      json.input = aLaTeX;
-      aCallback(json);
+      aCallback({ input: aLaTeX, output: json.result });
     }
   }).post();
 }
 
+// Public LaTeXML.fromLaTeX function.
 exports.fromLaTeX = function(aWorker, aLaTeX, aCallback) {
-  sendLaTeXMLRequest(aWorker, aLaTeX, aCallback, prefs["LaTeXMLMaxAttempt"]);
+  // Try to get the MathML from the cache.
+  database.getMathML(aLaTeX, function(aMathML) {
+    if (prefs["LaTeXMLCache"] && aMathML) {
+      aCallback({ input: aLaTeX, output: aMathML});
+    } else {
+      sendLaTeXMLRequest(aWorker, aLaTeX, aCallback,
+                         prefs["LaTeXMLMaxAttempts"]);
+    }
+  });
 }

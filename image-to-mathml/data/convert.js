@@ -33,14 +33,14 @@ function fromLaTeXRequest(aImage, aLaTeX, aCallback) {
 // Handle the fromLaTeX response.
 self.port.on("fromLaTeX-response", function (aResponse) {
   var JSONarray, data, previous, parent, i;
-  if (aResponse.result) {
+  if (aResponse.output) {
     // Conversion succeeded. Replace all the images by <math> elements.
     JSONarray = pendingFromLaTeXRequest[aResponse.input];
     for (i = 0; i < JSONarray.length; i++) {
       data = JSONarray[i];
       previous = data.image.previousElementSibling;
       parent = data.image.parentNode;
-      data.image.outerHTML = aResponse.result;
+      data.image.outerHTML = aResponse.output;
       if (data.callback) {
         // Execute the callback to do some postprocessing on the <math> tag.
         data.callback(previous ?

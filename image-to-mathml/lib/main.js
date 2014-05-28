@@ -14,7 +14,7 @@ function TeXZillaFromLaTeX(aWorker, aLaTeX)
 {
   var json = { input: aLaTeX };
   try {
-    json.result = TeXZilla.toMathMLString(aLaTeX, false, false, true);
+    json.output = TeXZilla.toMathMLString(aLaTeX, false, false, true);
     aWorker.port.emit("fromLaTeX-response", json);
     return true;
   } catch (e) { console.log(e); }
@@ -39,7 +39,7 @@ function addWorker(aWorker)
     if (s === "L" || s === "TL" || s === "LT") {
       // Now we try to convert the LaTeX source with a remote LaTeX instance.
       LaTeXML.fromLaTeX(aWorker, aLaTeX, function(aJSON) {
-        if (!aJSON.result && prefs["strategy"] === "LT") {
+        if (!aJSON.output && prefs["strategy"] === "LT") {
           // If the LaTeXML conversion failed, we try TeXZilla.
           if (TeXZillaFromLaTeX(aWorker, aLaTeX)) {
             return;
