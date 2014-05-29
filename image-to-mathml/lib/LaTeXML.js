@@ -28,7 +28,7 @@ function getLaTeXMLUrl(aPreloadList, aLaTeX)
   url += "?format=xhtml&whatsin=math&whatsout=math&pmml&nodefaultresources";
   url += generatePreloadComponents(prefs.LaTeXMLPreload);
   url += generatePreloadComponents(aPreloadList);
-  url += "&tex=literal:" + encodeURIComponent(aLaTeX);
+  url += "&tex=" + encodeURIComponent(aLaTeX);
   return url;
 }
 

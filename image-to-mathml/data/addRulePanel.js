@@ -12,19 +12,35 @@ function urlPatternChanged()
 {
   var pattern = document.getElementById("urlPattern");
   document.getElementById("OKButton").disabled = (pattern.value === "");
+  document.getElementById("DeleteButton").disabled = true;
+  if (pattern.value !== "") {
+    self.port.emit("get-rule-data", pattern.value);
+  }
 }
 
-function selectedScriptChanged()
+function selectedScriptChanged(aData)
 {
+  console.log("xxxxx"+aData);
   var i, s, options, o;
 
   // Get the selected script
-  i = document.getElementById("scriptSelect").selectedIndex;
-  for (s in scripts) {
-    if (i == 0) {
-      break;
+  if (aData) {
+    i = 0;
+    for (s in scripts) {
+      if (s === aData.Script) {
+        break;
+      }
+      i++;
     }
-    i--;
+    document.getElementById("scriptSelect").selectedIndex = i;
+  } else {
+    i = document.getElementById("scriptSelect").selectedIndex;
+    for (s in scripts) {
+      if (i == 0) {
+        break;
+      }
+      i--;
+    }
   }
   selectedScript = s;
   s = scripts[selectedScript];
@@ -37,6 +53,10 @@ function selectedScriptChanged()
   }
   for (o in s.ScriptOptions) {
     var option = s.ScriptOptions[o];
+    var value = option.value;
+    if (aData) {
+      value = aData.ScriptOptions[o];
+    }
     var newOption = refOption.cloneNode(true);
     newOption.removeAttribute("id");
     var label = newOption.getElementsByTagName("label")[0];
@@ -48,10 +68,10 @@ function selectedScriptChanged()
     input.setAttribute("id", o);
     if (option.type === "bool") {
       input.type = "checkbox";
-      input.checked = option.value;
+      input.checked = value;
     } else if (option.type === "string") {
       input.type = "text";
-      input.value = option.value;
+      input.value = value;
     } else {
       throw "Unknown option type: " + option.type;
     }
@@ -81,7 +101,7 @@ function submitRule()
   self.port.emit("update-rule", json);
 }
 
-self.port.on("send-data", function (aData) {
+self.port.on("send-main-data", function (aData) {
   scripts = aData.scripts;
 
   var local = aData.local, s, i, selectElement, selectChild;
@@ -114,12 +134,34 @@ self.port.on("send-data", function (aData) {
     selectChild.textContent = scripts[s].title;
     selectChild = selectChild.nextElementSibling;
   }
-  selectElement.addEventListener("change", selectedScriptChanged);
-  selectedScriptChanged();
+  selectElement.addEventListener("change", function () {
+    selectedScriptChanged(null);
+  });
+  selectedScriptChanged(null);
   
-  // Event for the cancel and OK button.
+  // Event for the cancel, OK and delete buttons.
   document.getElementById("CancelButton").addEventListener("click",
-    function () { self.port.emit("cancel"); }
+    function() { self.port.emit("cancel"); }
   );
   document.getElementById("OKButton").addEventListener("click", submitRule);
+  document.getElementById("DeleteButton").addEventListener("click", 
+    function() {
+      self.port.emit("delete-rule",
+                     document.getElementById("urlPattern").value);
+    }
+  );
+});
+
+self.port.on("send-rule-data", function (aData) {
+  var pattern = document.getElementById("urlPattern").value;
+  if (aData.URLPattern !== pattern || !aData.Script) {
+    return;
+  }
+  aData.ScriptOptions = JSON.parse(aData.ScriptOptions);
+
+  // The rule data has been found, enable the button.
+  document.getElementById("DeleteButton").disabled = false;
+
+  // Select the script
+  selectedScriptChanged(aData)
 });

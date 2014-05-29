@@ -18,6 +18,10 @@ let pendingFromLaTeXRequest = {};
 
 // Send a request to convert LaTeX to MathML.
 function fromLaTeXRequest(aImage, aPreloadList, aLaTeX, aCallback) {
+  if (aLaTeX === "") {
+    // Do nothing if the source is empty
+    return;
+  }
   var data = { image: aImage, callback: aCallback };
   if (pendingFromLaTeXRequest[aLaTeX]) {
     // The same request has already been sent in a previous call. Let's add this

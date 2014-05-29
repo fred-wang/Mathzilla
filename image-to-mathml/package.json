@@ -5,13 +5,13 @@
   "description": "Try to convert images of mathematical formulas into MathML.",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "0.1",
+  "version": "0.2",
   "preferences": [{
     "name": "LaTeXMLUrl",
     "title": "LaTeXMLUrl_title",
     "description": "LaTeXMLUrl_description",
     "type": "string",
-    "value": "http://gw125.iu.xsede.org:8888"
+    "value": "http://latexml.mathweb.org/convert"
   }, {
     "name": "LaTeXMLPreload",
     "title": "LaTeXMLPreload_title",

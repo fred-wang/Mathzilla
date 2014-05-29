@@ -19,6 +19,7 @@ var selfData = require("sdk/self").data,
   url = require('sdk/url');
 
 var database = { version: 1 };
+var activePageMods = {};
 
 function onAttach(aWorker)
 {
@@ -44,16 +45,29 @@ function onAttach(aWorker)
 
 function addPageMod(aURLPatternList, aScript, aScriptOptions)
 {
-  pageMod.PageMod({
+  var p = pageMod.PageMod({
     include: aURLPatternList,
     contentScriptFile: [
       selfData.url("convert.js"),
       selfData.url(aScript + ".js")
     ],
-    contentScriptOptions: JSON.stringify(aScriptOptions),
+    contentScriptOptions: aScriptOptions,
     onAttach: onAttach,
     attachTo: ["existing", "top", "frame"]
   });
+  for (var i = 0; i < aURLPatternList.length; i++) {
+    activePageMods[aURLPatternList[i]] = p;
+  }
+}
+
+function removeURLPatternFromPageMod(aURLPattern)
+{
+  // Remove the url from the page mod.
+  activePageMods[aURLPattern].include.remove(aURLPattern);
+  if (activePageMods[aURLPattern].include.length === 0) {
+    // The page mod is empty so we destroy it.
+    activePageMods[aURLPattern].destroy();
+  }
 }
 
 // Initialize a database to store the page mod and cache the MathML output.
@@ -148,6 +162,33 @@ database.putPageMod = function(aURLPattern, aScript, aScriptOptions) {
   request.onerror = database.onerror;
 };
 
+// Get the pageMod
+database.getPageMod = function(aURLPattern, aCallback) {
+  var json = { URLPattern: aURLPattern };
+  if (!this.db) {
+    aCallback(json);
+  }
+  var store = this.db.
+    transaction(["PageMod"], "readwrite").objectStore("PageMod");
+  var request = store.get(aURLPattern);
+  request.onerror = function() {
+    database.onerror();
+    aCallback(json);
+  };
+  request.onsuccess = function() {
+    aCallback(request.result ? request.result : json);
+  };
+};
+
+// Delete the pageMod
+database.deletePageMod = function(aURLPattern) {
+  if (this.db) {
+    var store = this.db.
+      transaction(["PageMod"], "readwrite").objectStore("PageMod");
+    store.delete(aURLPattern);
+  }
+};
+
 // Clear the MathML cache
 database.clearMathMLCache = function(aStore) {
   if (this.db) {
@@ -223,7 +264,7 @@ require("sdk/ui/button/action").ActionButton({
     }
     localizePredefinedScripts();
     addRulePanelLocalize();
-    addRulePanel.port.emit("send-data", {
+    addRulePanel.port.emit("send-main-data", {
       dir: _("addRulePanel_dir"),
       local: addRulePanelLocal,
       scripts: predefinedScripts,
@@ -242,6 +283,24 @@ addRulePanel.port.on("cancel", function() {
 
 addRulePanel.port.on("update-rule", function(aJSON) {
   database.putPageMod(aJSON.URLPattern, aJSON.Script, aJSON.ScriptOptions);
-  addPageMod([aJSON.URLPattern], aJSON.Script, aJSON.ScriptOptions);
+  if (activePageMods.hasOwnProperty(aJSON.URLPattern)) {
+    // Remove the url from the previous page mod.
+    removeURLPatternFromPageMod(aJSON.URLPattern);
+  }
+  addPageMod([aJSON.URLPattern], aJSON.Script,
+             JSON.stringify(aJSON.ScriptOptions));
+
   addRulePanel.hide();
+});
+
+addRulePanel.port.on("delete-rule", function(aURLPattern) {
+  database.deletePageMod(aURLPattern);
+  removeURLPatternFromPageMod(aURLPattern);
+  addRulePanel.hide();
+});
+
+addRulePanel.port.on("get-rule-data", function(aURLPattern) {
+  database.getPageMod(aURLPattern, function(aRuleData) {
+    addRulePanel.port.emit("send-rule-data", aRuleData);
+  });
 });
