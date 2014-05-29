@@ -14,7 +14,9 @@ var selfData = require("sdk/self").data,
   { indexedDB } = require('sdk/indexed-db'),
   { predefinedRules, predefinedScripts,
     localizePredefinedScripts } = require("./predefinedRules"),
-  _ = require("sdk/l10n").get;
+  _ = require("sdk/l10n").get,
+  tabs = require('sdk/tabs'),
+  url = require('sdk/url');
 
 var database = { version: 1 };
 
@@ -40,6 +42,20 @@ function onAttach(aWorker)
   aWorker.port.emit("convert-images");
 }
 
+function addPageMod(aURLPatternList, aScript, aScriptOptions)
+{
+  pageMod.PageMod({
+    include: aURLPatternList,
+    contentScriptFile: [
+      selfData.url("convert.js"),
+      selfData.url(aScript + ".js")
+    ],
+    contentScriptOptions: JSON.stringify(aScriptOptions),
+    onAttach: onAttach,
+    attachTo: ["existing", "top", "frame"]
+  });
+}
+
 // Initialize a database to store the page mod and cache the MathML output.
 database.onerror = function(e) {
   console.error(e.value);
@@ -55,7 +71,7 @@ request.onupgradeneeded = function(e) {
   if(db.objectStoreNames.contains("PageMod")) {
     db.deleteObjectStore("PageMod");
   }
-  store = db.createObjectStore("PageMod", { keyPath: "URIPattern" });
+  store = db.createObjectStore("PageMod", { keyPath: "URLPattern" });
   store.createIndex("byConversionMethod",
                     ["Script", "ScriptOptions"], { unique: false });
   store.transaction.oncomplete = function(e) {
@@ -66,10 +82,10 @@ request.onupgradeneeded = function(e) {
       // be listed in index.openCursor(). It will be stringified to be passed
       // to the worker scripts anyway.
       scriptoptions = JSON.stringify(predefinedRules[i].ScriptOptions);
-      patternList = predefinedRules[i].URIPatternList;
+      patternList = predefinedRules[i].URLPatternList;
       for (j = 0; j < patternList.length; j++) {
         request = objectStore.add({
-          URIPattern: patternList[j],
+          URLPattern: patternList[j],
           Script: predefinedRules[i].Script,
           ScriptOptions: scriptoptions
         });
@@ -101,26 +117,18 @@ request.onsuccess = function(e) {
     if (cursor) {
       if (pageModKey.Script === cursor.value.Script &&
           pageModKey.ScriptOptions === cursor.value.ScriptOptions) {
-        pageModInclude.push(cursor.value.URIPattern);
+        pageModInclude.push(cursor.value.URLPattern);
         cursor.continue();
         return;
       }
     }
 
     if (pageModInclude.length > 0) {
-      pageMod.PageMod({
-        include: pageModInclude,
-        contentScriptFile: [
-          selfData.url("convert.js"),
-          selfData.url(pageModKey.Script + ".js")
-        ],
-        contentScriptOptions: pageModKey.ScriptOptions,
-        onAttach: onAttach
-      });
+      addPageMod(pageModInclude, pageModKey.Script, pageModKey.ScriptOptions);
     }
 
     if (cursor) {
-      pageModInclude = [cursor.value.URIPattern];
+      pageModInclude = [cursor.value.URLPattern];
       pageModKey.Script = cursor.value.Script;
       pageModKey.ScriptOptions = cursor.value.ScriptOptions;
       cursor.continue();
@@ -129,11 +137,11 @@ request.onsuccess = function(e) {
 };
 
 // Update a PageMod.
-database.putPageMod = function(aURIPattern, aScript, aScriptOptions) {
+database.putPageMod = function(aURLPattern, aScript, aScriptOptions) {
   var store = database.db.
     transaction(["PageMod"], "readwrite").objectStore("PageMod");
   var request = store.put({
-    URIPattern: aURIPattern,
+    URLPattern: aURLPattern,
     Script: aScript,
     ScriptOptions: JSON.stringify(aScriptOptions)
   });
@@ -183,7 +191,7 @@ database.getMathML = function(aStore, aSource, aCallback) {
 var addRulePanelLocal = {
   addRule: null,
   deleteRule: null,
-  uriPatternLabel: null,
+  urlPatternLabel: null,
   scriptLabel: null,
   Cancel: null,
   OK: null,
@@ -200,28 +208,40 @@ var addRulePanel = require("sdk/panel").Panel({
 });
 
 require("sdk/ui/button/action").ActionButton({
-  id: "show-panel",
-  label: "Show Panel",
+  id: "addRulePanel",
+ label: _("addRulePanel_addRule"),
   icon: {
     "16": "./icon16.png",
     "32": "./icon32.png",
     "64": "./icon64.png"
   },
   onClick: function(aState) {
+    var urlPattern = "";
+    var currentURL = url.URL(tabs.activeTab.url);
+    if (currentURL.host) {
+      urlPattern = currentURL.scheme + "://" + currentURL.host + "/*";
+    }
     localizePredefinedScripts();
     addRulePanelLocalize();
     addRulePanel.port.emit("send-data", {
       dir: _("addRulePanel_dir"),
       local: addRulePanelLocal,
-      scripts: predefinedScripts
+      scripts: predefinedScripts,
+      urlPattern: urlPattern
     });
     addRulePanel.show({
-      width: 400,
-      height: 400,
+      width: 600,
+      height: 600,
     });
   }
 });
 
 addRulePanel.port.on("cancel", function() {
-    addRulePanel.hide();
+  addRulePanel.hide();
+});
+
+addRulePanel.port.on("update-rule", function(aJSON) {
+  database.putPageMod(aJSON.URLPattern, aJSON.Script, aJSON.ScriptOptions);
+  addPageMod([aJSON.URLPattern], aJSON.Script, aJSON.ScriptOptions);
+  addRulePanel.hide();
 });

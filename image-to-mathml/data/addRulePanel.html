@@ -23,58 +23,54 @@
         vertical-align: middle;
         display: table-cell;
       }
+      #infoScript, .infoOption {
+       font-size: small;
+      }
+      #refOption {
+        display: none !important;
+      }
+      label {
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
 
-    <div id="panel">
-      
+    <div id="panel">   
       <div>
         <div>
           <img src="./icon64.png" alt="icon64" width="64" height="64"/>
         </div>
         <div>
           <h1 class="addRule"></h1>
-          <button class="deleteRule"></button>
+          <button class="deleteRule" disabled="disabled"></button>
         </div>
       </div>
 
       <div>
-        <div><label class="uriPatternLabel"></label></div>
-        <div><input id="pattern" type="text"/></div>
+        <div><label class="urlPatternLabel"></label></div>
+        <div><input id="urlPattern" type="text"/></div>
       </div>
 
       <div>
-        <div><label class="scriptLabel"></label></div>
+        <div><label class="scriptLabel"></label><br/>
+          <span id="infoScript"></span>
+        </div>
         <div>
-          <select id="scriptSelect">
-          </select>
+          <select id="scriptSelect"></select>
         </div>
       </div>
 
-      <div>
-        <div><label></label></div>
-        <div><input type="text"/></div>
-      </div>
-
-      <div>
-        <div><label></label></div>
-        <div><input type="text"/></div>
-      </div>
-
-      <div>
-        <div><label></label></div>
-        <div><input type="text"/></div>
-      </div>
-
-      <div>
-        <div></div>
-        <div>
-          <button id="CancelButton" class="Cancel"></button>
-          <button class="OK"></button>
-        </div>
+      <div id="refOption" class="scriptOption">
+        <div><label></label><br/><span class="infoOption"></span></div>
+        <div><input/></div>
       </div>
     </div>
-    
+
+    <div style="margin: 20px; text-align: center;">
+      <button id="CancelButton" class="Cancel"></button>
+      <button id="OKButton" class="OK"></button>
+    </div>
+
   </body>
 </html>
