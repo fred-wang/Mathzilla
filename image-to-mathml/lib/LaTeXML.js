@@ -6,7 +6,7 @@
 
 "use strict";
 
-// This modules communicates with the LaTeXML Web service.
+// This module communicates with the LaTeXML Web service.
 
 var Request = require("sdk/request").Request,
   simplePrefs = require('sdk/simple-prefs'),

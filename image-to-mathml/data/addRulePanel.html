@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Add Rule</title>
+    <title class="addRule"></title>
     <meta charset="utf-8"/>
     <style type="text/css">
       h1 {
@@ -20,6 +20,7 @@
       }
       #panel > div > div {
         padding: 5px;
+        vertical-align: middle;
         display: table-cell;
       }
     </style>
@@ -32,47 +33,45 @@
         <div>
           <img src="./icon64.png" alt="icon64" width="64" height="64"/>
         </div>
-        <div style="float: left;">
-          <h1>Add a rule</h1>
-          <input type="button" value="Delete the rule"/>
+        <div>
+          <h1 class="addRule"></h1>
+          <button class="deleteRule"></button>
         </div>
       </div>
 
       <div>
-        <div><label>URI Pattern:</label></div>
+        <div><label class="uriPatternLabel"></label></div>
         <div><input id="pattern" type="text"/></div>
       </div>
 
       <div>
-        <div><label>Script:</label></div>
+        <div><label class="scriptLabel"></label></div>
         <div>
-          <select id="script">
-            <option>LaTeX_NoDelimiters</option>
-            <option>LaTeX_Delimiters</option>
+          <select id="scriptSelect">
           </select>
         </div>
       </div>
 
       <div>
-        <div><label>Option1:</label></div>
+        <div><label></label></div>
         <div><input type="text"/></div>
       </div>
 
       <div>
-        <div><label>Option2:</label></div>
+        <div><label></label></div>
         <div><input type="text"/></div>
       </div>
 
       <div>
-        <div><label>Option3:</label></div>
+        <div><label></label></div>
         <div><input type="text"/></div>
       </div>
 
       <div>
         <div></div>
-        <div style="text-align: right">
-          <input type="button" value="Cancel"/>
-          <input type="button" value="OK"/>
+        <div>
+          <button id="CancelButton" class="Cancel"></button>
+          <button class="OK"></button>
         </div>
       </div>
     </div>

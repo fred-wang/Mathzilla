@@ -20,8 +20,9 @@ self.port.on("convert-images", function () {
       fromLaTeXRequest(img, img.alt, null);
     }
   }
-  if (options.selectorsDisplayStyle !== "") {
-    images = document.body.querySelectorAll(options.selectorsDisplayStyle);
+  if (options.selectorsInlineDisplayStyle !== "") {
+    images = document.body.querySelectorAll(options.
+                                            selectorsInlineDisplayStyle);
     for (i = 0; i < images.length; i++) {
       img = images[i];
       fromLaTeXRequest(img, img.alt, function(aMath) {

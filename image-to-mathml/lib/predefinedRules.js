@@ -23,11 +23,11 @@ exports.predefinedScripts = {
   },
   "LaTeX_NoDelimiters": {
     ScriptOptions: {
-      selectorsNone: {
+      selectorsInline: {
         type: "string",
         value: ""
       },
-      selectorsDisplayStyle: {
+      selectorsInlineDisplayStyle: {
         type: "string",
         value: "img"
       },
@@ -51,8 +51,7 @@ exports.localizePredefinedScripts = function() {
         _(script + "_option_" + option + "_description");
     }
   }
-}
-exports.localizePredefinedScripts();
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 exports.predefinedRules = [
@@ -61,7 +60,7 @@ exports.predefinedRules = [
     // See http://en.support.wordpress.com/latex/
     Script: "LaTeX_NoDelimiters",
     ScriptOptions: {
-      selectorsDisplayStyle: "img.latex"
+      selectorsInlineDisplayStyle: "img.latex"
     },
     URIPatternList: "http://en.support.wordpress.com/latex/"
   },
@@ -70,7 +69,7 @@ exports.predefinedRules = [
     // See https://www.mediawiki.org/wiki/Texvc
     Script: "LaTeX_NoDelimiters",
     ScriptOptions: {
-      selectorsDisplayStyle: "img.tex"
+      selectorsInlineDisplayStyle: "img.tex"
     },
     URIPatternList: [
       "*.wikipedia.org",
@@ -82,7 +81,7 @@ exports.predefinedRules = [
     Script: "LaTeX_NoDelimiters",
     ScriptOptions: {
       selectorsInline: ".inline_eqn > img",
-      selectorsDisplayStyle: ".display_eqn > img"
+      selectorsInlineDisplayStyle: ".display_eqn > img"
     },
     URIPatternList: "http://myphysicslab.com/*"
   },
@@ -91,7 +90,7 @@ exports.predefinedRules = [
     // See http://www.spip.net/en_article3563.html
     Script: "LaTeX_NoDelimiters",
     ScriptOptions: {
-      selectorsDisplayStyle: ".spip img"
+      selectorsInlineDisplayStyle: ".spip img"
     },
     URIPatternList: "http://www.spip.net/*"
   },

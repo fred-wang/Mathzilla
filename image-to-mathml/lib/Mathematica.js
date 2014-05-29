@@ -6,7 +6,7 @@
 
 "use strict";
 
-// This modules communicates with the Mathematica Web service.
+// This module communicates with the Mathematica Web service.
 
 // Public Mathematica.fromMathematica function.
 exports.fromMathematica = function(aDatabase, aWorker, aMathematica,

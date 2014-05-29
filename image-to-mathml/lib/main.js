@@ -12,7 +12,9 @@ var selfData = require("sdk/self").data,
   prefs = simplePrefs.prefs,
   LaTeXML = require("./LaTeXML"),
   { indexedDB } = require('sdk/indexed-db'),
-  { predefinedRules, predefinedScripts } = require("./predefinedRules");
+  { predefinedRules, predefinedScripts,
+    localizePredefinedScripts } = require("./predefinedRules"),
+  _ = require("sdk/l10n").get;
 
 var database = { version: 1 };
 
@@ -178,9 +180,23 @@ database.getMathML = function(aStore, aSource, aCallback) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+var addRulePanelLocal = {
+  addRule: null,
+  deleteRule: null,
+  uriPatternLabel: null,
+  scriptLabel: null,
+  Cancel: null,
+  OK: null,
+}
+function addRulePanelLocalize() {
+  for (var key in addRulePanelLocal) {
+    addRulePanelLocal[key] = _("addRulePanel_" + key);
+  }
+}
+
 var addRulePanel = require("sdk/panel").Panel({
-  contentURL: selfData.url("addRulePanel.html")
-  //  contentScriptFile: selfData.url("addRulePanel.js")
+  contentURL: selfData.url("addRulePanel.html"),
+  contentScriptFile: selfData.url("addRulePanel.js"),
 });
 
 require("sdk/ui/button/action").ActionButton({
@@ -192,6 +208,13 @@ require("sdk/ui/button/action").ActionButton({
     "64": "./icon64.png"
   },
   onClick: function(aState) {
+    localizePredefinedScripts();
+    addRulePanelLocalize();
+    addRulePanel.port.emit("send-data", {
+      dir: _("addRulePanel_dir"),
+      local: addRulePanelLocal,
+      scripts: predefinedScripts
+    });
     addRulePanel.show({
       width: 400,
       height: 400,
@@ -199,3 +222,6 @@ require("sdk/ui/button/action").ActionButton({
   }
 });
 
+addRulePanel.port.on("cancel", function() {
+    addRulePanel.hide();
+});
