@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Add Rule</title>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+      h1 {
+        font-size: 16px;
+      }
+      body {
+        background-color: #eee;
+        font-size: 14px;
+      }
+      #panel {
+        display: table;
+        margin: auto;
+      }
+      #panel > div {
+        display: table-row;
+      }
+      #panel > div > div {
+        padding: 5px;
+        display: table-cell;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="panel">
+      
+      <div>
+        <div>
+          <img src="./icon64.png" alt="icon64" width="64" height="64"/>
+        </div>
+        <div style="float: left;">
+          <h1>Add a rule</h1>
+          <input type="button" value="Delete the rule"/>
+        </div>
+      </div>
+
+      <div>
+        <div><label>URI Pattern:</label></div>
+        <div><input id="pattern" type="text"/></div>
+      </div>
+
+      <div>
+        <div><label>Script:</label></div>
+        <div>
+          <select id="script">
+            <option>LaTeX_NoDelimiters</option>
+            <option>LaTeX_Delimiters</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <div><label>Option1:</label></div>
+        <div><input type="text"/></div>
+      </div>
+
+      <div>
+        <div><label>Option2:</label></div>
+        <div><input type="text"/></div>
+      </div>
+
+      <div>
+        <div><label>Option3:</label></div>
+        <div><input type="text"/></div>
+      </div>
+
+      <div>
+        <div></div>
+        <div style="text-align: right">
+          <input type="button" value="Cancel"/>
+          <input type="button" value="OK"/>
+        </div>
+      </div>
+    </div>
+    
+  </body>
+</html>

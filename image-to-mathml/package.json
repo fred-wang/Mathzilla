@@ -7,18 +7,6 @@
   "license": "MPL 2.0",
   "version": "0.1",
   "preferences": [{
-    "name": "strategy",
-    "title": "strategy_title",
-    "description": "strategy_description",
-    "type": "menulist",
-    "value": "L",
-    "options": [
-      { "value": "L", "label": "LaTeXML only" },
-      { "value": "T", "label": "TeXZilla only" },
-      { "value": "TL", "label": "TeXZilla followed by LaTeXML" },
-      { "value": "LT", "label": "LaTeXML followed by TeXZilla" }
-    ]
-  }, {
     "name": "LaTeXMLUrl",
     "title": "LaTeXMLUrl_title",
     "description": "LaTeXMLUrl_description",
