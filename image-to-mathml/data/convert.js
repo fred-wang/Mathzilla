@@ -17,7 +17,7 @@
 let pendingFromLaTeXRequest = {};
 
 // Send a request to convert LaTeX to MathML.
-function fromLaTeXRequest(aImage, aLaTeX, aCallback) {
+function fromLaTeXRequest(aImage, aPreloadList, aLaTeX, aCallback) {
   var data = { image: aImage, callback: aCallback };
   if (pendingFromLaTeXRequest[aLaTeX]) {
     // The same request has already been sent in a previous call. Let's add this
@@ -26,7 +26,7 @@ function fromLaTeXRequest(aImage, aLaTeX, aCallback) {
   } else {
     // Create a one-element array and send a new request.
     pendingFromLaTeXRequest[aLaTeX] = [data];
-    self.port.emit("fromLaTeX-request", aLaTeX);
+    self.port.emit("fromLaTeX-request", aPreloadList, aLaTeX);
   }
 }
 

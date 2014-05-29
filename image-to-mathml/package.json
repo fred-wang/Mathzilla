@@ -13,6 +13,12 @@
     "type": "string",
     "value": "http://gw125.iu.xsede.org:8888"
   }, {
+    "name": "LaTeXMLPreload",
+    "title": "LaTeXMLPreload_title",
+    "description": "LaTeXMLPreload_description",
+    "type": "string",
+    "value": "LaTeX.pool,article.cls,amsmath.sty,amsthm.sty,amstext.sty,amssymb.sty,eucal.sty,[dvipsnames]xcolor.sty,url.sty,hyperref.sty,[Bids]latexml.sty"
+  }, {
     "name": "LaTeXMLMaxAttempts",
     "title": "LaTeXMLMaxAttempts_title",
     "description": "LaTeXMLMaxAttempt_description",

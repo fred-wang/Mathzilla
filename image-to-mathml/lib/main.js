@@ -21,8 +21,8 @@ var database = { version: 1 };
 function onAttach(aWorker)
 {
   // LaTeX-to-MathML conversion.
-  aWorker.port.on("fromLaTeX-request", function(aLaTeX) {
-    LaTeXML.fromLaTeX(database, aWorker, aLaTeX,
+  aWorker.port.on("fromLaTeX-request", function(aPreloadList, aLaTeX) {
+    LaTeXML.fromLaTeX(database, aWorker, aPreloadList, aLaTeX,
                       function(aJSON) {
       aWorker.port.emit("fromLaTeX-response", aJSON);
     });

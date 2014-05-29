@@ -17,7 +17,7 @@ self.port.on("convert-images", function () {
     images = document.body.querySelectorAll(options.selectorsNone);
     for (i = 0; i < images.length; i++) {
       img = images[i];
-      fromLaTeXRequest(img, img.alt, null);
+      fromLaTeXRequest(img, options.preloadList, img.alt, null);
     }
   }
   if (options.selectorsInlineDisplayStyle !== "") {
@@ -25,7 +25,7 @@ self.port.on("convert-images", function () {
                                             selectorsInlineDisplayStyle);
     for (i = 0; i < images.length; i++) {
       img = images[i];
-      fromLaTeXRequest(img, img.alt, function(aMath) {
+      fromLaTeXRequest(img, options.preloadList, img.alt, function(aMath) {
         aMath.setAttribute("displaystyle", "true");
       });
     }
@@ -34,7 +34,7 @@ self.port.on("convert-images", function () {
     images = document.body.querySelectorAll(options.selectorsDisplay);
     for (i = 0; i < images.length; i++) {
       img = images[i];
-      fromLaTeXRequest(img, img.alt, function(aMath) {
+      fromLaTeXRequest(img, options.preloadList, img.alt, function(aMath) {
         aMath.setAttribute("display", "block");
       });
     }

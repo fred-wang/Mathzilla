@@ -12,33 +12,45 @@ var Request = require("sdk/request").Request,
   simplePrefs = require('sdk/simple-prefs'),
   prefs = simplePrefs.prefs;
 
-// Determine the URL for the POST request.
-function getLaTeXMLUrl(aLaTeX)
+function generatePreloadComponents(aPreloadList)
 {
-  var LaTeXMLSetting = "format=xhtml&whatsin=math&whatsout=math&pmml&nodefaultresources&preload=LaTeX.pool&preload=article.cls&preload=amsmath.sty&preload=amsthm.sty&preload=amstext.sty&preload=amssymb.sty&preload=eucal.sty&preload=%5Bdvipsnames%5Dxcolor.sty&preload=url.sty&preload=hyperref.sty&preload=%5Bids%5Dlatexml.sty&preload=texvc";
-  return prefs["LaTeXMLUrl"] + "?" + LaTeXMLSetting + "&tex=literal:" +
-    encodeURIComponent(aLaTeX);
+  var components = "";
+  var list = aPreloadList.split(",").map(function(value) {
+    components += "&preload=" + encodeURIComponent(value);
+  });
+  return components;
+}
+
+// Determine the URL for the POST request.
+function getLaTeXMLUrl(aPreloadList, aLaTeX)
+{
+  var url = prefs.LaTeXMLUrl;
+  url += "?format=xhtml&whatsin=math&whatsout=math&pmml&nodefaultresources";
+  url += generatePreloadComponents(prefs.LaTeXMLPreload);
+  url += generatePreloadComponents(aPreloadList);
+  url += "&tex=literal:" + encodeURIComponent(aLaTeX);
+  return url;
 }
 
 // Send the LaTeXML request.
-function sendLaTeXMLRequest(aDatabase, aWorker, aLaTeX, aCallback,
+function sendLaTeXMLRequest(aDatabase, aWorker, aPreloadList, aLaTeX, aCallback,
                             aMaxAttempts) {
-  Request({
-    url: getLaTeXMLUrl(aLaTeX),
+   Request({
+    url: getLaTeXMLUrl(aPreloadList, aLaTeX),
     onComplete: function (aResponse) {
       var json = aResponse.json;
       if (!json || !json.result) {
         // Conversion failed. Either we try again or we give up and submit an
         // empty reply.
         if (aMaxAttempts > 0) {
-          sendLaTeXMLRequest(aDatabase, aWorker, aLaTeX, aCallback,
-                             aMaxAttempts - 1);
+          sendLaTeXMLRequest(aDatabase, aWorker, aPreloadList, aLaTeX,
+                             aCallback, aMaxAttempts - 1);
           return;
         }
         console.warn("LaTeXML failed to convert '" + aLaTeX + "'\n" +
                      aResponse.text);
         json = {};
-      } else if (prefs["LaTeXMLCache"]) {
+      } else if (prefs.LaTeXMLCache) {
         // Cache the result.
         aDatabase.putMathML("LaTeXML", aLaTeX, json.result);
       }
@@ -48,14 +60,15 @@ function sendLaTeXMLRequest(aDatabase, aWorker, aLaTeX, aCallback,
 }
 
 // Public LaTeXML.fromLaTeX function.
-exports.fromLaTeX = function(aDatabase, aWorker, aLaTeX, aCallback) {
+exports.fromLaTeX = function(aDatabase, aWorker, aPreloadList, aLaTeX,
+                             aCallback) {
   // Try to get the MathML from the cache.
   aDatabase.getMathML("LaTeXML", aLaTeX, function(aMathML) {
-    if (prefs["LaTeXMLCache"] && aMathML) {
+    if (prefs.LaTeXMLCache && aMathML) {
       aCallback({ input: aLaTeX, output: aMathML});
     } else {
-      sendLaTeXMLRequest(aDatabase, aWorker, aLaTeX, aCallback,
-                         prefs["LaTeXMLMaxAttempts"]);
+      sendLaTeXMLRequest(aDatabase, aWorker, aPreloadList, aLaTeX, aCallback,
+                         prefs.LaTeXMLMaxAttempts);
     }
   });
 };

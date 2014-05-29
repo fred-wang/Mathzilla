@@ -18,6 +18,10 @@ exports.predefinedScripts = {
       useDisplayAttribute: {
         type: "bool",
         value: true
+      },
+      preloadList: {
+        type: "string",
+        value: ""
       }
     }
   },
@@ -32,6 +36,10 @@ exports.predefinedScripts = {
         value: "img"
       },
       selectorsDisplay: {
+        type: "string",
+        value: ""
+      },
+      preloadList: {
         type: "string",
         value: ""
       }
@@ -69,7 +77,8 @@ exports.predefinedRules = [
     // See https://www.mediawiki.org/wiki/Texvc
     Script: "LaTeX_NoDelimiters",
     ScriptOptions: {
-      selectorsInlineDisplayStyle: "img.tex"
+      selectorsInlineDisplayStyle: "img.tex",
+      preloadList: "texvc"
     },
     URIPatternList: [
       "*.wikipedia.org",

@@ -21,7 +21,7 @@ self.port.on("convert-images", function () {
         (m =
          alt.match(/^\s*\\begin{displaymath}([^]+)\\end{displaymath}\s*$/))) {
       // Display equations
-      fromLaTeXRequest(img, m[1], function(aMath) {
+      fromLaTeXRequest(img, options.preloadList, m[1], function(aMath) {
         if (options.useDisplayAttribute) {
           aMath.setAttribute("display", "block");
         } else {
@@ -31,7 +31,7 @@ self.port.on("convert-images", function () {
     } else if ((m = alt.match(/^\s*\$([^]+)\$\s*$/)) ||
                (m = alt.match(/^\s*\\\(([^]+)\\\)\s*$/))) {
       // Inline equations
-      fromLaTeXRequest(img, m[1], null);
+      fromLaTeXRequest(img, options.preloadList, m[1], null);
     }
   }
 });
