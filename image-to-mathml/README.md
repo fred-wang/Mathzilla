@@ -1,6 +1,6 @@
 # Image to MathML
 
-This directory contains the source of the Image to MathML add-on which is
+This directory contains the source of the [Image to MathML add-on](https://addons.mozilla.org/en-US/firefox/addon/image-to-mathml/) which is
 built with the [Add-on SDK](https://developer.mozilla.org/en-US/Add-ons/SDK).
 
 Users should report any bug to the
@@ -8,5 +8,5 @@ Users should report any bug to the
 
 Localizers should look at the `locale/` directory. To add a new translation,
 copy `en-US.properties` to another `*.properties` with the appropriate
-[Locale Code](https://wiki.mozilla.org/L10n:Locale_Codes). Please submit a pull
-request or open an issue [on GitHub](https://github.com/fred-wang/Mathzilla/).
+[Locale Code](https://wiki.mozilla.org/L10n:Locale_Codes). Please check the
+[GitHub Localization issue](https://github.com/fred-wang/Mathzilla/issues/17).

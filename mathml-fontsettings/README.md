@@ -8,5 +8,5 @@ Users should report any bug to the
 
 Localizers should look at the `locale/` directory. To add a new translation,
 copy `en-US.properties` to another `*.properties` with the appropriate
-[Locale Code](https://wiki.mozilla.org/L10n:Locale_Codes). Please submit a pull
-request or open an issue [on GitHub](https://github.com/fred-wang/Mathzilla/).
+[Locale Code](https://wiki.mozilla.org/L10n:Locale_Codes). Please check the
+[GitHub Localization issue](https://github.com/fred-wang/Mathzilla/issues/17).
