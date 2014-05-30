@@ -91,6 +91,16 @@ var observer = new MutationObserver(function(aMutations) {
 observer.observe(document.body, { childList: true, subtree: true });
 
 self.port.on("detach", function() {
+  // Remove the listener
+  var maths = document.body.getElementsByTagNameNS(MathMLNameSpace, "math");
+  var i, node;
+  for (i = 0; i < maths.length; i++) {
+    node = maths[i];
+    if (node.parentNode.getAttribute("class") !== "MathMLAddOnZoomed") {
+      unregisterZoom(node);
+    }
+  }
+
   // Remove the observer.
   observer.disconnect();
 });
