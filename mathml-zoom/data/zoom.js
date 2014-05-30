@@ -7,6 +7,7 @@
 "use strict";
 
 var MathMLNameSpace = "http://www.w3.org/1998/Math/MathML";
+var XHTMLNameSpace = "http://www.w3.org/1999/xhtml"
 
 function unzoom(aEvent)
 {
@@ -19,7 +20,18 @@ function unzoom(aEvent)
 function zoom(aEvent)
 {
   var math = aEvent.currentTarget;
-  
+  if (!math.parentNode || math.parentNode.namespaceURI !== XHTMLNameSpace) {
+    // Ignore zoom request if the <math> is not inside an HTML container.
+    // XXXfredw: Do we want to handle the case of MathML in SVG?
+    return;
+  }
+
+  var previous = math.previousElementSibling;
+  if (previous && previous.getAttribute("class") === "MathMLAddOnZoomed") {
+    // The zoom is already visible, so we ignore this request.
+    return;
+  }
+
   // Create a div to store the zoomed math and register listener to unzoom it.
   var zoomedMath = document.createElement("div");
   zoomedMath.setAttribute("class", "MathMLAddOnZoomed");
