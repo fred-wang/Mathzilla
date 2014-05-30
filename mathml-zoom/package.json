@@ -1,0 +1,9 @@
+{
+  "name": "mathml-zoom",
+  "title": "MathML Zoom",
+  "id": "jid1-EQE4AIXPwNXvEA",
+  "description": "Allow zooming mathematical formulas",
+  "author": "Frédéric Wang",
+  "license": "MPL 2.0",
+  "version": "0.1"
+}

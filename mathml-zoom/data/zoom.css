@@ -1,0 +1,17 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+div.MathMLAddOnZoomed {
+  position: absolute !important;
+  background-color: #f0f0f0 !important;
+  overflow: none !important;
+  display: inline-block !important;
+  z-index: 1000 !important;
+  padding: .5em !important;
+  border: 1px solid black !important;
+  margin: 0 !important;
+  box-shadow: 5px 5px 15px #aaaaaa !important;
+}
