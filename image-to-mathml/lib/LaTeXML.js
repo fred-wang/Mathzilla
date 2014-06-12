@@ -10,7 +10,8 @@
 
 var Request = require("sdk/request").Request,
   simplePrefs = require('sdk/simple-prefs'),
-  prefs = simplePrefs.prefs;
+  prefs = simplePrefs.prefs,
+  sanitizer = require("sanitizer");
 
 function generatePreloadComponents(aPreloadList)
 {
@@ -50,9 +51,12 @@ function sendLaTeXMLRequest(aDatabase, aWorker, aPreloadList, aLaTeX, aCallback,
         console.warn("LaTeXML failed to convert '" + aLaTeX + "'\n" +
                      aResponse.text);
         json = {};
-      } else if (prefs.LaTeXMLCache) {
-        // Cache the result.
-        aDatabase.putMathML("LaTeXML", aLaTeX, json.result);
+      } else {
+        json.result = sanitizer.sanitize(json.result);
+        if (prefs.LaTeXMLCache) {
+          // Cache the sanitized result.
+          aDatabase.putMathML("LaTeXML", aLaTeX, json.result);
+        }
       }
       aCallback({ input: aLaTeX, output: json.result });
     }
