@@ -2,15 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Latin Modern Math. This font does not work on Windows (bug 1014498) so we can
-   only use a modified WOFF version. */
+/* Latin Modern Math. */
 @font-face {
   font-family: 'Latin Modern Math';
-  src: url('LatinModern/latinmodern-math-AscentDescent.woff');
+  src: local('Latin Modern Math'), local('LatinModernMath-Regular'), url('LatinModern/latinmodern-math.woff');
 }
 
-/* XITS. This is a fork of STIX with many bugs fixed. */
+/* XITS. */
 @font-face {
     font-family: 'XITS Math';
-    src: local('XITS Math'), local('XITSMath'), url('XITS/xits-math.woff');
+    src: local('XITS Math'), local('XITSMath-Regular'), url('XITS/xits-math.woff');
 }
