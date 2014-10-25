@@ -6,7 +6,7 @@
   "author": "Frédéric Wang",
   "translators": ["Frédéric Wang", "Khaled Hosny", "Raniere Silva"],
   "license": "MPL 2.0",
-  "version": "1.5",
+  "version": "1.6",
   "preferences": [{
         "name": "useBrowserContext",
         "title": "useBrowserContext_title",
@@ -34,5 +34,12 @@
         "description": "fixMathJaxNativeMML_description",
         "type": "bool",
         "value": true
+    },
+    {
+        "name": "exclusionList",
+        "title": "exclusionList_title",
+        "description": "exclusionList_description",
+        "type": "string",
+        "value": "*.nbcnews.com"
     }]
 }

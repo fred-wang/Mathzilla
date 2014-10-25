@@ -9,7 +9,7 @@ var data = require("sdk/self").data,
   prefs = require('sdk/simple-prefs').prefs;
 
 // Modify MathJax's menu preference.
-pageMod.PageMod({
+var menuPageMod = {
   include: "*",
   contentScriptFile: data.url("menu-cookie.js"),
   contentScriptWhen: "start",
@@ -23,10 +23,10 @@ pageMod.PageMod({
     }
     worker.port.emit('set-menu-cookie', config);
   }
-});
+};
 
 // Modify MathJax's code to fix performance and rendering issues.
-pageMod.PageMod({
+var bugPageMod = {
   include: "*",
   contentScriptFile: data.url("bug-fixes.js"),
   contentScriptWhen: "start",
@@ -36,4 +36,15 @@ pageMod.PageMod({
       fixMathJaxNativeMML: prefs["fixMathJaxNativeMML"]
     });
   }
-});
+};
+
+// Add the exclusion list.
+var exclusionList = prefs["exclusionList"].trim();
+if (exclusionList.length > 0) {
+  menuPageMod.exclude = exclusionList.split(",");
+  bugPageMod.exclude = menuPageMod.exclude;
+}
+
+// Add the page mods
+pageMod.PageMod(menuPageMod);
+pageMod.PageMod(bugPageMod);
