@@ -38,13 +38,21 @@ var bugPageMod = {
   }
 };
 
+// Modify's KaTeX default CSS to force native MathML to be displayed.
+var katexPageMod = {
+  include: "*",
+  contentStyleFile: data.url("katex.css")
+};
+
 // Add the exclusion list.
 var exclusionList = prefs["exclusionList"].trim();
 if (exclusionList.length > 0) {
   menuPageMod.exclude = exclusionList.split(",");
   bugPageMod.exclude = menuPageMod.exclude;
+  katexPageMod.exclude = menuPageMod.exclude;
 }
 
 // Add the page mods
 pageMod.PageMod(menuPageMod);
 pageMod.PageMod(bugPageMod);
+pageMod.PageMod(katexPageMod);
