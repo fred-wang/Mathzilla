@@ -2,8 +2,8 @@
   "name": "mathml-copy",
   "title": "MathML Copy",
   "id": "jid1-u5w9ZJYgijZpHA",
-  "description": "Add menu items to copy MathML and TeX formulas into the clipboard.",
+  "description": "Add items to the context menu to copy a MathML formula and other annotations attached to it (e.g. LaTeX) into the clipboard.",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "1.0"
+  "version": "1.1"
 }
