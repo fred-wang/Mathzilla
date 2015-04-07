@@ -41,43 +41,41 @@ simplePrefs.on("mathFontScale", updateWorkerStyles);
 simplePrefs.on("mathFontImportant", updateWorkerStyles);
 
 // Set the font family submenu.
-var gMathFonts = [
-  "Asana Math",
-  "Cambria Math",
-  "Latin Modern Math",
-  "Lucida Bright Math",
-  "Minion Math",
-  "Neo Euler",
-  "STIX Math",
-  "TeX Gyre Bonum Math",
-  "TeX Gyre Pagella Math",
-  "TeX Gyre Schola Math",
-  "TeX Gyre Termes Math",
-  "XITS Math"
-];
 var fontFamilyMenu = contextMenu.Menu({
   label: _("mathFontFamily_title"),
 });
-fontFamilyMenu.addItem(
-  contextMenu.Item({
-    label: _("mathFontFamily_default"),
-    contentScript: "self.on('click', function () { self.postMessage(); });",
-    onMessage: function() {
-      prefs["mathFontFamily"] = "";
-    }
-  })
-);
-for (var i = 0; i < gMathFonts.length; i++) {
-  fontFamilyMenu.addItem(
+function updateFontFamilySubMenu()
+{
+  var mathFonts = prefs["mathFontFamilyList"].split(",");
+  var items = [];
+  items.push(
     contextMenu.Item({
-      label: gMathFonts[i],
+      label: _("mathFontFamily_default"),
       contentScript: "self.on('click', function () { self.postMessage(); });",
       onMessage: function() {
-        prefs["mathFontFamily"] = this.label;
+        prefs["mathFontFamily"] = "";
       }
     })
   );
+  for (var i = 0; i < mathFonts.length; i++) {
+    mathFonts[i] = mathFonts[i].trim();
+    if (mathFonts[i].length > 0) {
+      items.push(
+        contextMenu.Item({
+          label: mathFonts[i],
+          contentScript:
+            "self.on('click', function () { self.postMessage(); });",
+          onMessage: function() {
+            prefs["mathFontFamily"] = this.label;
+          }
+        })
+      );
+    }
+  }
+  fontFamilyMenu.items = items;
 }
+updateFontFamilySubMenu();
+simplePrefs.on("mathFontFamilyList", updateFontFamilySubMenu);
 
 // Set the font scale submenu.
 var fontScaleMenu = contextMenu.Menu({
