@@ -1,6 +1,6 @@
-# mathjax-native-mathml
+# native-mathml
 
-This directory contains the source of the [MathJax Native MathML add-on](https://addons.mozilla.org/en-US/firefox/addon/mathjax-native-mathml/) which is built with the
+This directory contains the source of the [Native MathML add-on](https://addons.mozilla.org/en-US/firefox/addon/mathjax-native-mathml/) which is built with the
 [Add-on SDK](https://developer.mozilla.org/en-US/Add-ons/SDK).
 
 Users should report any bug to the
