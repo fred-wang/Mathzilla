@@ -1,9 +1,10 @@
 {
   "name": "texzilla",
   "title": "texzilla",
-  "id": "jid1-eTgiiG7aEZuPdg",
+  "id": "jid1-eTgiiG7aEZuPdg@jetpack",
+  "main": "lib/main.js",
   "description": "Add-on giving access to the TeXZilla parser.",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "0.9.8"
+  "version": "0.9.9"
 }
