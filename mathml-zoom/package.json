@@ -1,9 +1,10 @@
 {
   "name": "mathml-zoom",
   "title": "MathML Zoom",
-  "id": "jid1-umYSoqNlFpsxzQ",
+  "id": "jid1-umYSoqNlFpsxzQ@jetpack",
+  "main": "lib/main.js",
   "description": "Allow zooming mathematical formulas",
   "author": "Frédéric Wang",
   "license": "MPL 2.0",
-  "version": "0.3"
+  "version": "0.4"
 }

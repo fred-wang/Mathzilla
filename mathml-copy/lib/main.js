@@ -7,7 +7,7 @@
 var contextMenu = require("sdk/context-menu");
 var data        = require("sdk/self").data;
 var clipboard   = require("sdk/clipboard");
-var copyMathML  = require("copy-mathml");
+var copyMathML  = require("./copy-mathml");
 var _           = require("sdk/l10n").get;
 
 // Add a menu item to copy the <math> source and element.
