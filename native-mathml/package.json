@@ -1,12 +1,13 @@
 {
   "name": "native-mathml",
   "title": "Native MathML",
-  "id": "jid1-fGtBdrROY6E1gA",
+  "id": "jid1-fGtBdrROY6E1gA@jetpack",
   "description": "This add-on allow to use native MathML rendering on some web sites. For example, it includes a CSS stylesheet to force KaTeX to display its MathML output. It also changes MathJax's preference to select its Native MathML output mode. It can also fix some rendering/performance bugs in the native MathML module of MathJax, can prevent MathJax from overriding the browser user interface and can disable the mml2jax preprocessor.",
   "author": "Frédéric Wang",
   "translators": ["Frédéric Wang", "Khaled Hosny", "Raniere Silva"],
   "license": "MPL 2.0",
-  "version": "1.7",
+  "version": "1.8",
+  "main": "lib/main.js",
   "preferences": [{
         "name": "useBrowserContext",
         "title": "useBrowserContext_title",

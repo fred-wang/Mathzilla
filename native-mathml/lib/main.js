@@ -44,6 +44,12 @@ var katexPageMod = {
   contentStyleFile: data.url("katex.css")
 };
 
+// Modify's MediaWiki default CSS to force native MathML to be displayed.
+var mediawikiPageMod = {
+  include: "*",
+  contentStyleFile: data.url("mediawiki.css")
+};
+
 // Add the exclusion list.
 var exclusionList = prefs["exclusionList"].trim();
 if (exclusionList.length > 0) {
@@ -56,3 +62,4 @@ if (exclusionList.length > 0) {
 pageMod.PageMod(menuPageMod);
 pageMod.PageMod(bugPageMod);
 pageMod.PageMod(katexPageMod);
+pageMod.PageMod(mediawikiPageMod);

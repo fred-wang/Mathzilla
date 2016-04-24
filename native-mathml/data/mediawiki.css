@@ -1,0 +1,19 @@
+/* -*- Mode: CSS; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Reset some CSS properties set by MediaWiki and hide the image fallback */
+.mwe-math-mathml-a11y {
+    clip: auto;
+    overflow: visible;
+    position: static;
+    width: auto;
+    height: auto;
+    opacity: 1;
+}
+.mwe-math-mathml-inline + .mwe-math-fallback-image-inline,
+.mwe-math-mathml-display + .mwe-math-fallback-image-display {
+    display: none !important;
+}
