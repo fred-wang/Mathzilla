@@ -5,7 +5,7 @@ products with new MathML-related features. See the [Mathzilla collection on AMO]
 
 - [FireMath](https://addons.mozilla.org/firefox/addon/firemath/) ([official Web site](http://www.firemath.info/))
 - [Image To MathML](https://addons.mozilla.org/firefox/addon/image-to-mathml/)
-- [MathJax Native MathML](https://addons.mozilla.org/firefox/addon/mathjax-native-mathml/)
+- [Native MathML](https://addons.mozilla.org/firefox/addon/native-mathml/)
 - [MathML Copy](https://addons.mozilla.org/firefox/addon/mathml-copy/)
 - [MathML Font Settings](https://addons.mozilla.org/firefox/addon/mathml-font-settings/)
 - [MathML Zoom](https://addons.mozilla.org/firefox/addon/mathml-zoom/)
