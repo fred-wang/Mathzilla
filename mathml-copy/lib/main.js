@@ -20,16 +20,6 @@ contextMenu.Item({
   }
 });
 
-// Add a menu item to copy the TeX annotation attached to a <semantics> element.
-contextMenu.Item({
-  label: _("copy_tex"),
-  context: contextMenu.SelectorContext("semantics"),
-  contentScriptFile: data.url("get-tex-source.js"),
-  onMessage: function(aSource) {
-    clipboard.set(aSource);
-  }
-});
-
 // Add a submenu enumerating the annotations attached to a <semantics> element.
 contextMenu.Menu({
   label: _("copy_annotation"),
