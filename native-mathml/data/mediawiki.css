@@ -13,6 +13,10 @@
     height: auto;
     opacity: 1;
 }
+/* Support where MediaWiki lazy loaded images */
+.mwe-math-mathml-inline ~ .lazy-image-placeholder,
+.mwe-math-mathml-display ~ .lazy-image-placeholder,
+/* Support where MediaWiki doesn't lazy load images */
 .mwe-math-mathml-inline + .mwe-math-fallback-image-inline,
 .mwe-math-mathml-display + .mwe-math-fallback-image-display {
     display: none !important;
