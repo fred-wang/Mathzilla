@@ -6,7 +6,7 @@
   "author": "Frédéric Wang",
   "translators": ["Frédéric Wang", "Khaled Hosny", "Raniere Silva"],
   "license": "MPL 2.0",
-  "version": "1.8",
+  "version": "1.9",
   "main": "lib/main.js",
   "preferences": [{
         "name": "useBrowserContext",
