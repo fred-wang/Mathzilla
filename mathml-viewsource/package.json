@@ -1,0 +1,16 @@
+{
+  "title": "MathML View Source",
+  "name": "mathml-viewsource",
+  "version": "0.0.1",
+  "description": "A 'View MathML Source' context menu item",
+  "main": "index.js",
+  "author": "Frédéric Wang",
+  "engines": {
+    "firefox": ">=38.0a1",
+    "fennec": ">=38.0a1"
+  },
+  "license": "MPL",
+  "keywords": [
+    "jetpack"
+  ]
+}

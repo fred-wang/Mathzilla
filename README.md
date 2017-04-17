@@ -1,15 +1,21 @@
 # Mathzilla
 
 The goal of the Mathzilla Project is to provide add-ons to extend Mozilla
-products with new MathML-related features. See the [Mathzilla collection on AMO](https://addons.mozilla.org/collections/fred_wang/mathzilla/):
+products with new MathML-related features. See the [Mathzilla collection on AMO](https://addons.mozilla.org/collections/fred_wang/mathzilla/).
 
-- [FireMath](https://addons.mozilla.org/firefox/addon/firemath/) ([official Web site](http://www.firemath.info/))
-- [Image To MathML](https://addons.mozilla.org/firefox/addon/image-to-mathml/)
-- [Native MathML](https://addons.mozilla.org/firefox/addon/native-mathml/)
-- [MathML Copy](https://addons.mozilla.org/firefox/addon/mathml-copy/)
-- [MathML Font Settings](https://addons.mozilla.org/firefox/addon/mathml-font-settings/)
-- [MathML Zoom](https://addons.mozilla.org/firefox/addon/mathml-zoom/)
-- [MathML-ctop](https://addons.mozilla.org/addon/mathml-ctop/)
-- [MathML-fonts](https://addons.mozilla.org/addon/mathml-fonts/)
-- [MathML-mml3ff](https://addons.mozilla.org/addon/mathml-mml3ff/)
-- [TeXZilla](https://addons.mozilla.org/firefox/addon/texzilla/)
+**Warning: This directory contains some obsolete or experimental content and is
+  only kept for historical purpose.**
+
+The following extensions have been converted to the
+[WebExtension](https://developer.mozilla.org/en-US/Add-ons/WebExtensions) format
+and are tracked in separate repositories:
+
+- Image To MathML - TODO
+- MathML Copy - TODO
+- [MathML Fonts](https://github.com/fred-wang/MathFonts/tree/master/webextension)
+- [MathML Font Settings](https://github.com/fred-wang/webextension-mathml-font-settings)
+- MathML View Source - TODO
+- [MathML Zoom](https://github.com/fred-wang/webextension-mathml-zoom)
+- [Native MathML](https://github.com/fred-wang/webextension-native-mathml)
+- MathML Polyfills (formely MathML-ctop and MathML-mml3ff) - TODO
+- [TeXZilla](https://github.com/fred-wang/TeXZilla/tree/master/webextension)
