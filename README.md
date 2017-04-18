@@ -17,6 +17,6 @@ and are tracked in separate repositories:
 - MathML View Source - TODO
 - [MathML Zoom](https://github.com/fred-wang/webextension-mathml-zoom)
 - [Native MathML](https://github.com/fred-wang/webextension-native-mathml)
-- Content MathML Polyfills (formely MathML-ctop) - TODO
-- Presentation MathML Polyfills (formely MathML-mml3ff) - TODO
+- [Content MathML Polyfill](https://github.com/fred-wang/webextension-content-mathml-polyfill)
+- [Presentation MathML Polyfill](https://github.com/fred-wang/webextension-presentation-mathml-polyfill)
 - [TeXZilla](https://github.com/fred-wang/TeXZilla/tree/master/webextension)
