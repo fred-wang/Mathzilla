@@ -14,7 +14,7 @@ and are tracked in separate repositories:
 - MathML Copy - TODO
 - [MathML Fonts](https://github.com/fred-wang/MathFonts/tree/master/webextension)
 - [MathML Font Settings](https://github.com/fred-wang/webextension-mathml-font-settings)
-- MathML View Source - TODO
+- [MathML View Source](https://github.com/fred-wang/webextension-mathml-view-source/)
 - [MathML Zoom](https://github.com/fred-wang/webextension-mathml-zoom)
 - [Native MathML](https://github.com/fred-wang/webextension-native-mathml)
 - [Content MathML Polyfill](https://github.com/fred-wang/webextension-content-mathml-polyfill)
