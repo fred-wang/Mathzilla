@@ -10,8 +10,8 @@ The following extensions have been converted to the
 [WebExtension](https://developer.mozilla.org/en-US/Add-ons/WebExtensions) format
 and are tracked in separate repositories:
 
-- Image To MathML - TODO
-- MathML Copy - TODO
+- [Image To MathML](https://github.com/fred-wang/webextension-image-to-mathml)
+- [MathML Copy](https://github.com/fred-wang/webextension-mathml-copy)
 - [MathML Fonts](https://github.com/fred-wang/MathFonts/tree/master/webextension)
 - [MathML Font Settings](https://github.com/fred-wang/webextension-mathml-font-settings)
 - [MathML View Source](https://github.com/fred-wang/webextension-mathml-view-source/)
